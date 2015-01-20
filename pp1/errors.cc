@@ -32,7 +32,7 @@ void ReportError::OutputError(const yyltype *loc, string msg) {
 void ReportError::Formatted(yyltype *loc, const char *format, ...) {
     va_list args;
     char errbuf[2048];
-    
+
     va_start(args, format);
     vsprintf(errbuf,format, args);
     va_end(args);
