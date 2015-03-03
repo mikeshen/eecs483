@@ -3,7 +3,7 @@
  * This file defines the main() routine for the program and not much else.
  * You should not need to modify this file.
  */
-
+ 
 #include <string.h>
 #include <stdio.h>
 #include "utility.h"
@@ -23,18 +23,18 @@ static void PrintOneToken(TokenType token, const char *text, YYSTYPE value,
 {
   char buffer[] = {'\'', token, '\'', '\0'};
   const char *name = token >= T_Void ? gTokenNames[token - T_Void] : buffer;
-
+  
   printf("%-12s line %d cols %d-%d is %s ", text,
 	   loc.first_line, loc.first_column, loc.last_column, name);
-
+  
   switch(token) {
-    case T_IntConstant:
+    case T_IntConstant:     
       printf("(value = %d)\n", value.integerConstant); break;
-    case T_DoubleConstant:
+    case T_DoubleConstant:   
       printf("(value = %g)\n", value.doubleConstant); break;
-    case T_StringConstant:
+    case T_StringConstant:  
       printf("(value = %s)\n", value.stringConstant); break;
-    case T_BoolConstant:
+    case T_BoolConstant:    
       printf("(value = %s)\n", value.boolConstant ? "true" : "false"); break;
     case T_Identifier:
 	if (strcmp(text, value.identifier)) {
@@ -64,10 +64,10 @@ int main(int argc, char *argv[])
     ParseCommandLine(argc, argv);
     FILE *filtered = popen("./dpp", "r"); // start up the preprocessor
     yyrestart(filtered); // tell lex to read from output of preprocessor
-
+  
     InitScanner();
     TokenType token;
-    while ((token = (TokenType)yylex()) != 0)
+    while ((token = (TokenType)yylex()) != 0) 
         PrintOneToken(token, yytext, yylval, yylloc);
     pclose(filtered);
     return (ReportError::NumErrors() == 0? 0 : -1);

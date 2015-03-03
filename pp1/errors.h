@@ -60,14 +60,14 @@ class ReportError
 
   // Returns number of error messages printed
   static int NumErrors() { return numErrors; }
-
+  
  private:
 
   static void UnderlineErrorInLine(const char *line, const yyltype *pos);
   static void EmitError(yyltype *loc, string msg);
   static void OutputError(const yyltype *loc, string msg);
   static int numErrors;
-
+  
 };
 
 #endif
