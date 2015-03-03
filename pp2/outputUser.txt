@@ -1,0 +1,37 @@
+
+   Program: 
+  1   VarDecl: 
+         Type: int
+  1      Identifier: hello
+  2   VarDecl: 
+         Type: string
+  2      Identifier: test
+  3   FnDecl: 
+         (return type) Type: string
+  3      Identifier: got
+  3      (formals) VarDecl: 
+            Type: int
+  3         Identifier: hi
+  3      (formals) VarDecl: 
+            Type: bool
+  3         Identifier: go
+  3      (formals) VarDecl: 
+            Type: double
+  3         Identifier: nice
+         (body) StmtBlock: 
+  3         VarDecl: 
+               Type: int
+  3            Identifier: x
+  3         VarDecl: 
+               Type: string
+  3            Identifier: g
+  3         VarDecl: 
+               Type: bool
+  3            Identifier: glibc
+  3         IntConstant: 5
+  3         BoolConstant: true
+  4   VarDecl: 
+  4      ArrayType: 
+  4         ArrayType: 
+               Type: bool
+  4      Identifier: go
