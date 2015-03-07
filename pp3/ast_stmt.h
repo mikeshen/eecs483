@@ -23,18 +23,19 @@ class Expr;
 class Program : public Node
 {
   protected:
-     List<Decl*> *decls;
+    SymbolTable* symT;
+    List<Decl*>* decls;
 
   public:
-     Program(List<Decl*> *declList);
-     void Check();
+    Program(List<Decl*> *declList);
+    void Check();
 };
 
 class Stmt : public Node
 {
   public:
-     Stmt() : Node() {}
-     Stmt(yyltype loc) : Node(loc) {}
+    Stmt() : Node() {}
+    Stmt(yyltype loc) : Node(loc) {}
 };
 
 class StmtBlock : public Stmt
