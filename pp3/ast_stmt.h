@@ -28,7 +28,7 @@ class Program : public Node
 
   public:
     Program(List<Decl*> *declList);
-    void Check();
+    virtual void Check();
 };
 
 class Stmt : public Node
@@ -36,6 +36,8 @@ class Stmt : public Node
   public:
     Stmt() : Node() {}
     Stmt(yyltype loc) : Node(loc) {}
+    virtual bool BuildTree(SymbolTable* symT, bool inheritEnv = false) { return true; }
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class StmtBlock : public Stmt

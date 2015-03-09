@@ -40,6 +40,7 @@ class VarDecl : public Decl
 
   public:
     VarDecl(Identifier *name, Type *type);
+    virtual bool BuildTree(SymbolTable *symT);
 };
 
 class ClassDecl : public Decl
@@ -48,19 +49,23 @@ class ClassDecl : public Decl
     List<Decl*> *members;
     NamedType *extends;
     List<NamedType*> *implements;
+    SymbolTable* classScope;
 
   public:
     ClassDecl(Identifier *name, NamedType *extends,
               List<NamedType*> *implements, List<Decl*> *members);
+    virtual bool BuildTree(SymbolTable *symT);
 };
 
 class InterfaceDecl : public Decl
 {
   protected:
     List<Decl*> *members;
+    SymbolTable* interfaceScope;
 
   public:
     InterfaceDecl(Identifier *name, List<Decl*> *members);
+    virtual bool BuildTree(SymbolTable *symT);
 };
 
 class FnDecl : public Decl
@@ -69,10 +74,12 @@ class FnDecl : public Decl
     List<VarDecl*> *formals;
     Type *returnType;
     Stmt *body;
+    SymbolTable* fnScope;
 
   public:
     FnDecl(Identifier *name, Type *returnType, List<VarDecl*> *formals);
     void SetFunctionBody(Stmt *b);
+    virtual bool BuildTree(SymbolTable *symT);
 };
 
 #endif

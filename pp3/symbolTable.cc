@@ -20,7 +20,9 @@ Node* SymbolTable::getThisClass() {
 Symbol *SymbolTable::find(char* key) {
     SymbolTable* current = this;
     Symbol* symbol = nullptr;
-    for ( ; current != nullptr; current = current->getParent()) if ((symbol = current->findLocal(key)) != nullptr) return symbol;
+    for ( ; current != nullptr; current = current->getParent())
+        if ((symbol = current->findLocal(key)) != nullptr)
+            return symbol;
     if (_super && (symbol = findSuper(key)) != nullptr) return symbol;
     return nullptr;
 }
@@ -42,7 +44,9 @@ Symbol* SymbolTable::findInClass(char* key) {
 Symbol* SymbolTable::findUp(char* key) {
     SymbolTable* current = _parent;
     Symbol* symbol = nullptr;
-    for ( ; current != nullptr; current = current->getParent()) if ((symbol = current->findLocal(key)) != nullptr) return symbol;
+    for ( ; current != nullptr; current = current->getParent())
+        if ((symbol = current->findLocal(key)) != nullptr)
+            return symbol;
     return nullptr;
 }
 
@@ -50,7 +54,9 @@ Symbol* SymbolTable::findSuper(char *key) {
     Symbol* symbol = nullptr;
     SymbolTable* current = _super;
     if (!_super) return nullptr;
-    for ( ; current != nullptr; current = current->getSuper()) if ((symbol = current->findLocal(key)) != nullptr) return symbol;
+    for ( ; current != nullptr; current = current->getSuper())
+        if ((symbol = current->findLocal(key)) != nullptr)
+            return symbol;
     return nullptr;
 }
 
@@ -88,10 +94,13 @@ bool SymbolTable::add(char* key, Node* node) {
 SymbolTable* SymbolTable::addScope() {
     SymbolTable* child = new SymbolTable;
     child->setParent(this);
-    if (_this) child->setThis(_this);
+    if (_this)
+        child->setThis(_this);
     _blocks->Append(child);
-    if (_ownernode) child->setOwnerNode(_ownernode);
-    if (_lastnode) child->setLastNode(_lastnode);
+    if (_ownernode)
+        child->setOwnerNode(_ownernode);
+    if (_lastnode)
+        child->setLastNode(_lastnode);
     return child;
 }
 
@@ -99,7 +108,8 @@ SymbolTable* SymbolTable::addUnderScope(char* key, Node* node, E_Type type) {
     SymbolTable* newEnv = new SymbolTable;
     Symbol* refNode = nullptr;
     newEnv->setParent(this);
-    if (_this) newEnv->setThis(_this);
+    if (_this)
+        newEnv->setThis(_this);
     refNode = new Symbol(type, node, newEnv);
     _table->Enter(key, refNode, false);
     newEnv->setOwnerNode(node);

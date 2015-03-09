@@ -60,7 +60,8 @@ class Identifier : public Node
   public:
     Identifier(yyltype loc, const char *name);
     friend std::ostream& operator<<(std::ostream& out, Identifier *id) { return out << id->name; }
-    bool Check(SymbolTable* symT) { return true; }
+    virtual bool Check(SymbolTable* symT) { return true; }
+    char* getName() {  return name;  }
 };
 
 
@@ -73,7 +74,7 @@ class Error : public Node
 {
   public:
     Error() : Node() {}
-    bool Check(SymbolTable* symT) { return true; }
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 

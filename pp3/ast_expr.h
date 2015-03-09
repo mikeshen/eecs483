@@ -26,6 +26,7 @@ class Expr : public Stmt
   public:
     Expr(yyltype loc) : Stmt(loc) {}
     Expr() : Stmt() {}
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 /* This node type is used for those places where an expression is optional.
@@ -34,6 +35,7 @@ class Expr : public Stmt
 class EmptyExpr : public Expr
 {
   public:
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class IntConstant : public Expr
@@ -43,6 +45,7 @@ class IntConstant : public Expr
 
   public:
     IntConstant(yyltype loc, int val);
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class DoubleConstant : public Expr
@@ -52,6 +55,7 @@ class DoubleConstant : public Expr
 
   public:
     DoubleConstant(yyltype loc, double val);
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class BoolConstant : public Expr
@@ -61,6 +65,7 @@ class BoolConstant : public Expr
 
   public:
     BoolConstant(yyltype loc, bool val);
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class StringConstant : public Expr
@@ -70,12 +75,14 @@ class StringConstant : public Expr
 
   public:
     StringConstant(yyltype loc, const char *val);
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class NullConstant: public Expr
 {
   public:
     NullConstant(yyltype loc) : Expr(loc) {}
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class Operator : public Node
@@ -86,6 +93,7 @@ class Operator : public Node
   public:
     Operator(yyltype loc, const char *tok);
     friend std::ostream& operator<<(std::ostream& out, Operator *o) { return out << o->tokenString; }
+    virtual bool Check(SymbolTable* symT) { return true; }
  };
 
 class CompoundExpr : public Expr
@@ -97,6 +105,7 @@ class CompoundExpr : public Expr
   public:
     CompoundExpr(Expr *lhs, Operator *op, Expr *rhs); // for binary
     CompoundExpr(Operator *op, Expr *rhs);             // for unary
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class ArithmeticExpr : public CompoundExpr
@@ -116,7 +125,6 @@ class EqualityExpr : public CompoundExpr
 {
   public:
     EqualityExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
-    const char *GetPrintNameForNode() { return "EqualityExpr"; }
 };
 
 class LogicalExpr : public CompoundExpr
@@ -124,14 +132,12 @@ class LogicalExpr : public CompoundExpr
   public:
     LogicalExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
     LogicalExpr(Operator *op, Expr *rhs) : CompoundExpr(op,rhs) {}
-    const char *GetPrintNameForNode() { return "LogicalExpr"; }
 };
 
 class AssignExpr : public CompoundExpr
 {
   public:
     AssignExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
-    const char *GetPrintNameForNode() { return "AssignExpr"; }
 };
 
 class LValue : public Expr
