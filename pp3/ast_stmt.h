@@ -45,9 +45,11 @@ class StmtBlock : public Stmt
   protected:
     List<VarDecl*> *decls;
     List<Stmt*> *stmts;
-
+	SymbolTable* blockScope;
+	
   public:
     StmtBlock(List<VarDecl*> *variableDeclarations, List<Stmt*> *statements);
+	bool BuildTree(SymbolTable *symT, bool inheritEnv);
 };
 
 
@@ -75,12 +77,14 @@ class ForStmt : public LoopStmt
 
   public:
     ForStmt(Expr *init, Expr *test, Expr *step, Stmt *body);
+	bool BuildTree(Symboltable *symT);
 };
 
 class WhileStmt : public LoopStmt
 {
   public:
     WhileStmt(Expr *test, Stmt *body) : LoopStmt(test, body) {}
+	bool BuildTree(Symboltable *symT);
 };
 
 class IfStmt : public ConditionalStmt
@@ -90,6 +94,7 @@ class IfStmt : public ConditionalStmt
 
   public:
     IfStmt(Expr *test, Stmt *thenBody, Stmt *elseBody);
+	bool IfStmt::BuildTree(SymbolTable *symT);
 };
 
 class BreakStmt : public Stmt
@@ -124,9 +129,11 @@ class Case : public Node
   protected:
     IntConstant *value;
     List<Stmt*> *stmts;
+	SymbolTable* caseScope;
 
   public:
     Case(IntConstant *v, List<Stmt*> *stmts);
+	bool BuildTree(SymbolTable *symT);
 };
 
 class SwitchStmt : public Stmt
@@ -137,6 +144,7 @@ class SwitchStmt : public Stmt
 
   public:
     SwitchStmt(Expr *e, List<Case*> *cases);
+	bool BuildTree(SymbolTable *symT);
 };
 
 #endif

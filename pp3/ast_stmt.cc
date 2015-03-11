@@ -36,6 +36,20 @@ StmtBlock::StmtBlock(List<VarDecl*> *d, List<Stmt*> *s) {
     (stmts=s)->SetParentAll(this);
 }
 
+bool StmtBlock::BuildTree(SymbolTable *symT, bool inheritEnv = false) {
+  if (!inheritEnv)
+    blockScope = symT->addScope();
+  bool flag = true;
+
+  for (int i = 0; i < decls->NumElements(); i++)
+    flag = decls->Nth(i)->BuildTree(blockScope) ? flag : false;
+
+  for (int i = 0; i < stmts->NumElements(); i++)
+    flag = stmts->Nth(i)->BuildTree(blockScope) ? flag : false;
+
+  return true;
+}
+
 ConditionalStmt::ConditionalStmt(Expr *t, Stmt *b) {
     Assert(t != NULL && b != NULL);
     (test=t)->SetParent(this);
@@ -48,12 +62,26 @@ ForStmt::ForStmt(Expr *i, Expr *t, Expr *s, Stmt *b): LoopStmt(t, b) {
     (step=s)->SetParent(this);
 }
 
+bool ForStmt::BuildTree(SymbolTable *symT) {
+  blockScope = symT->addScope();
+
+  blockScope->setLastNode(this);
+  return body->CheckDecls(blockScope);
+}
+
 IfStmt::IfStmt(Expr *t, Stmt *tb, Stmt *eb): ConditionalStmt(t, tb) {
     Assert(t != NULL && tb != NULL); // else can be NULL
     elseBody = eb;
     if (elseBody) elseBody->SetParent(this);
 }
 
+bool IfStmt::BuildTree(SymbolTable *symT) {
+  bool flag = true;
+  flag = body->BuildTree(symT) ? flag : false;
+  if (elseBody != nullptr)
+    flag = elseBody->BuildTree(symT) ? flag : false;
+  return flag;
+}
 
 ReturnStmt::ReturnStmt(yyltype loc, Expr *e) : Stmt(loc) {
     Assert(e != NULL);
@@ -72,8 +100,35 @@ Case::Case(IntConstant *v, List<Stmt*> *s) {
     (stmts=s)->SetParentAll(this);
 }
 
+bool Case::BuildTree(SymbolTable *symT) {
+  caseScope = symT->addScope();
+  bool flag = true;
+
+  caseScope->setLastNode(this);
+  for (int i = 0; i < stmts->NumElements(); i++)
+    flag = stmts->Nth(i)->BuildTree(symT) ? flag : false;
+
+  return flag;
+}
+
 SwitchStmt::SwitchStmt(Expr *e, List<Case*> *c) {
     Assert(e != NULL && c != NULL);
     (expr=e)->SetParent(this);
     (cases=c)->SetParentAll(this);
+}
+
+bool SwitchStmt::BuildTree(SymbolTable *symT) {
+  bool flag = true;
+  for (int i = 0; i < cases->NumElements(); i++) 
+    flag = cases->Nth(i)->BuildTree(symT) ? flag : false;
+
+  flag = default_case->BuildTree(symT) ? flag : false;
+  return ret;
+}
+
+bool WhileStmt::BuildTree(SymbolTable *symT) {
+  blockScope = symT->addScope();
+
+  blockScope->setLastNode(this);
+  return body->BuildTree(blockScope);
 }
