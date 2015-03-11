@@ -30,30 +30,27 @@ Type::Type(const char *n) {
 }
 
 bool NamedType::isConvertableTo(Type *inputType) {
-  Symbol *sym = globalEnv->find(id->getName(), CLASS);
-  ClassDecl *classDecl = static_cast<ClassDecl*>(sym->getNode());
-  char *newName = inputType->getName();
+    Symbol *sym = globalEnv->find(id->getName(), CLASS);
+    ClassDecl *classDecl = static_cast<ClassDecl*>(sym->getNode());
+    char *newName = inputType->getName();
 
-  if (inputType->isBuiltIn())
-    return false;
-
-  if (IsEquivalentTo(inputType))
-    return true;
-
-  if (sym  == nullptr)
-    return false;
-
-  if (classDecl->ImplementsInterface(newName))
-    return true;
-
-  return sym->getEnv()->subclassOf(newName);
+    if (inputType->isBuiltIn())
+        return false;
+    else if (IsEquivalentTo(inputType))
+        return true;
+    else if (sym == nullptr)
+        return false;
+    else if (classDecl->ImplementsInterface(newName))
+        return true;
+    else
+        return sym->getEnv()->subclassOf(newName);
 }
 
 bool NamedType::isEquivalentTo(Type *inputType) {
-  NamedType *otherType = dynamic_cast<NamedType*>(inputType);
-  if (otherType == 0)
-    return false;
-  return strcmp(id->getName(), otherType->getName()) == 0;
+    NamedType *otherType = dynamic_cast<NamedType*>(inputType);
+    if (otherType == 0)
+        return false;
+    return strcmp(id->getName(), otherType->getName()) == 0;
 }
 
 
@@ -68,21 +65,21 @@ ArrayType::ArrayType(yyltype loc, Type *et) : Type(loc) {
 }
 
 bool ArrayType::isConvertableTo(Type *inputType) {
-  if (inputType->IsEquivalentTo(Type::errorType))
-    return true;
+    if (inputType->IsEquivalentTo(Type::errorType))
+        return true;
 
-  ArrayType *otherType = dynamic_cast<ArrayType*>(inputType);
-  if (otherType == 0)
-    return false;
+    ArrayType *otherType = dynamic_cast<ArrayType*>(inputType);
+    if (otherType == 0)
+        return false;
 
-  return elemType->IsEquivalentTo(otherType->getElemType());
+    return elemType->IsEquivalentTo(otherType->getElemType());
 }
 
 bool ArrayType::isEquivalentTo(Type *inputType) {
-  ArrayType *otherType = dynamic_cast<ArrayType*>(inputType);
-  if (otherType == 0) {
-    return false;
-  }
-  return elemType->IsEquivalentTo(otherType->getElemType());
+    ArrayType *otherType = dynamic_cast<ArrayType*>(inputType);
+    if (otherType == 0) {
+        return false;
+    }
+    return elemType->IsEquivalentTo(otherType->getElemType());
 }
 
