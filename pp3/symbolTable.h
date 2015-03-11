@@ -53,10 +53,10 @@ protected:
     SymbolTable* _parent;
     SymbolTable* _super;
     SymbolTable* _this;
-    Node* _ownernode;
-    Node* _lastnode;
-    Hashtable<Symbol*>* _table;
-    List<SymbolTable*>* _blocks;
+    Node* ownernode;
+    Node* lastnode;
+    Hashtable<Symbol*>* table;
+    List<SymbolTable*>* blocks;
 public:
     SymbolTable();
 
@@ -85,19 +85,19 @@ public:
     }
 
     void setOwnerNode(Node* s) {
-        _ownernode = s;
+        ownernode = s;
     }
 
     Node* getOwnerNode() {
-        return _ownernode;
+        return ownernode;
     }
 
     void setLastNode(Node* s) {
-        _lastnode = s;
+        lastnode = s;
     }
 
     Node* getLastNode() {
-        return _lastnode;
+        return lastnode;
     }
 
     Node* getThisClass();

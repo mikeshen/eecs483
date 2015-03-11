@@ -7,9 +7,9 @@ Symbol::Symbol(E_Type t, Node* n, SymbolTable* e) : type(t), node(n), env(e) {}
 
 /** Class: SymbolTable **/
 SymbolTable::SymbolTable() : _parent(nullptr), _super(nullptr), _this(nullptr),
-                             _ownernode(nullptr), _lastnode(nullptr),
-                             _table(new Hashtable<Symbol*>),
-                             _blocks(new List<SymbolTable*>) {}
+                             ownernode(nullptr), lastnode(nullptr),
+                             table(new Hashtable<Symbol*>),
+                             blocks(new List<SymbolTable*>) {}
 
 Node* SymbolTable::getThisClass() {
     if (!_this) return nullptr;
@@ -29,7 +29,7 @@ Symbol *SymbolTable::find(char* key) {
 
 Symbol* SymbolTable::findLocal(char* key) {
     Symbol* symbol = nullptr;
-    if ((symbol = _table->Lookup(key)) != nullptr) return symbol;
+    if ((symbol = table->Lookup(key)) != nullptr) return symbol;
     if (_super && (symbol = findSuper(key)) != nullptr) return symbol;
     return nullptr;
 }
@@ -87,7 +87,7 @@ bool SymbolTable::subclassOf(char *key) {
 
 bool SymbolTable::add(char* key, Node* node) {
     Symbol* s = new Symbol(VARIABLE, node);
-    _table->Enter(key, s, false);
+    table->Enter(key, s, false);
     return true;
 }
 
@@ -96,11 +96,11 @@ SymbolTable* SymbolTable::addScope() {
     child->setParent(this);
     if (_this)
         child->setThis(_this);
-    _blocks->Append(child);
-    if (_ownernode)
-        child->setOwnerNode(_ownernode);
-    if (_lastnode)
-        child->setLastNode(_lastnode);
+    blocks->Append(child);
+    if (ownernode)
+        child->setOwnerNode(ownernode);
+    if (lastnode)
+        child->setLastNode(lastnode);
     return child;
 }
 
@@ -111,12 +111,12 @@ SymbolTable* SymbolTable::addUnderScope(char* key, Node* node, E_Type type) {
     if (_this)
         newEnv->setThis(_this);
     refNode = new Symbol(type, node, newEnv);
-    _table->Enter(key, refNode, false);
+    table->Enter(key, refNode, false);
     newEnv->setOwnerNode(node);
-    _lastnode = nullptr;
+    lastnode = nullptr;
     return newEnv;
 }
 
 int SymbolTable::getSize() {
-    return _table->NumEntries();
+    return table->NumEntries();
 }
