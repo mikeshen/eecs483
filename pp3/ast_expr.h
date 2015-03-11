@@ -27,6 +27,11 @@ class Expr : public Stmt
     Expr(yyltype loc) : Stmt(loc) {}
     Expr() : Stmt() {}
     virtual bool Check(SymbolTable* symT) { return true; }
+	void setEvalType(Type* eType) { evaluatedType = eType; }
+	TYpe* getEvalType() { return evaluatedType; }
+	
+	protected:
+	Type* evaluatedType;
 };
 
 /* This node type is used for those places where an expression is optional.
@@ -113,18 +118,21 @@ class ArithmeticExpr : public CompoundExpr
   public:
     ArithmeticExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
     ArithmeticExpr(Operator *op, Expr *rhs) : CompoundExpr(op,rhs) {}
+	bool Check(SymbolTable* symT);
 };
 
 class RelationalExpr : public CompoundExpr
 {
   public:
     RelationalExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
+	bool Check(SymbolTable* symT);
 };
 
 class EqualityExpr : public CompoundExpr
 {
   public:
     EqualityExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
+	bool Check(SymbolTable* symT);
 };
 
 class LogicalExpr : public CompoundExpr
@@ -132,24 +140,28 @@ class LogicalExpr : public CompoundExpr
   public:
     LogicalExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
     LogicalExpr(Operator *op, Expr *rhs) : CompoundExpr(op,rhs) {}
+	bool Check(SymbolTable* symT);
 };
 
 class AssignExpr : public CompoundExpr
 {
   public:
     AssignExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
+	bool Check(SymbolTable* symT);
 };
 
 class LValue : public Expr
 {
   public:
     LValue(yyltype loc) : Expr(loc) {}
+	bool Check(SymbolTable* symT) { return true; }
 };
 
 class This : public Expr
 {
   public:
     This(yyltype loc) : Expr(loc) {}
+	bool Check(SymbolTable* symT);
 };
 
 class ArrayAccess : public LValue
@@ -159,6 +171,7 @@ class ArrayAccess : public LValue
 
   public:
     ArrayAccess(yyltype loc, Expr *base, Expr *subscript);
+	bool Check(SymbolTable* symT);
 };
 
 /* Note that field access is used both for qualified names
@@ -174,6 +187,7 @@ class FieldAccess : public LValue
 
   public:
     FieldAccess(Expr *base, Identifier *field); //ok to pass NULL base
+	bool Check(SymbolTable* symT);
 };
 
 /* Like field access, call is used both for qualified base.field()
@@ -189,6 +203,7 @@ class Call : public Expr
 
   public:
     Call(yyltype loc, Expr *base, Identifier *field, List<Expr*> *args);
+	bool Check(SymbolTable* symT);
 };
 
 class NewExpr : public Expr
@@ -198,6 +213,7 @@ class NewExpr : public Expr
 
   public:
     NewExpr(yyltype loc, NamedType *clsType);
+	bool Check(SymbolTable* symT);
 };
 
 class NewArrayExpr : public Expr
@@ -208,18 +224,21 @@ class NewArrayExpr : public Expr
 
   public:
     NewArrayExpr(yyltype loc, Expr *sizeExpr, Type *elemType);
+	bool Check(SymbolTable* symT);
 };
 
 class ReadIntegerExpr : public Expr
 {
   public:
     ReadIntegerExpr(yyltype loc) : Expr(loc) {}
+	bool Check(SymbolTable* symT);
 };
 
 class ReadLineExpr : public Expr
 {
   public:
     ReadLineExpr(yyltype loc) : Expr (loc) {}
+	bool Check(SymbolTable* symT);
 };
 
 class PostfixExpr : public Expr
@@ -229,6 +248,7 @@ class PostfixExpr : public Expr
      Operator *op;
   public:
     PostfixExpr(LValue *lv, Operator *op);
+	bool Check(SymbolTable* symT);
 };
 
 

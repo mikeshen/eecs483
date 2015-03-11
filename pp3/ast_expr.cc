@@ -46,6 +46,41 @@ CompoundExpr::CompoundExpr(Operator *o, Expr *r)
     (right=r)->SetParent(this);
 }
 
+bool ArithmeticExpr::Check(SymbolTable* symT) { ///////////////////////////////////////Might need to fix this crap. This isCovertable checks are 2shady4me
+  bool flag = true;
+  Type* leftType;
+  Type* rightType;
+
+  if (left != NULL) {
+    flag = left->Check(symT) ? flag : false;
+    leftType = left->getEvalType();
+  }
+
+  flag = right->Check(symT) ? flag : false;
+  rightType = right->getEvalType();
+
+  if (left) {
+    if (leftType->IsConvertableTo(Type::intType) && rightType->IsConvertableTo(Type::intType))
+      setEvalType(Type::intType);
+	else if (leftType->IsConvertableTo(Type::doubleType) && rightType->IsConvertableTo(Type::doubleType))
+      setEvalType(Type::doubleType);
+	else {
+      ReportError::IncompatibleOperands(op, leftType, rightType);
+      setEvalType(Type::errorType);
+      flag = false;
+    }
+  } 
+  else {
+    if (!rightType->IsConvertableTo(Type::intType) && !rightType->IsConvertableTo(Type::doubleType)) {
+      ReportError::IncompatibleOperand(op, rightType);
+      setEvalType(Type::errorType);
+    }
+	else
+      setEvalType(rightType);
+  }
+
+  return flag;
+}
 
 ArrayAccess::ArrayAccess(yyltype loc, Expr *b, Expr *s) : LValue(loc) {
     (base=b)->SetParent(this);
