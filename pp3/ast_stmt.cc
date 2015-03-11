@@ -7,6 +7,7 @@
 #include "ast_decl.h"
 #include "ast_expr.h"
 
+SymbolTable* globalEnv;
 
 Program::Program(List<Decl*>* d) {
     Assert(d != NULL);

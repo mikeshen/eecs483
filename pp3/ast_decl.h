@@ -31,6 +31,7 @@ class Decl : public Node
     virtual bool BuildTree(SymbolTable* symT) { return true; }
     virtual bool Check(SymbolTable* symT) { return true; }
     virtual Type* getType() { return nullptr; }
+    char* getName() { return id->getName(); }
 };
 
 class VarDecl : public Decl
@@ -42,6 +43,7 @@ class VarDecl : public Decl
     VarDecl(Identifier *name, Type *type);
     virtual bool BuildTree(SymbolTable *symT);
     virtual bool Check(SymbolTable* symT);
+    virtual Type* getType() { return type; }
 };
 
 class ClassDecl : public Decl
@@ -55,6 +57,7 @@ class ClassDecl : public Decl
   public:
     ClassDecl(Identifier *name, NamedType *extends,
               List<NamedType*> *implements, List<Decl*> *members);
+    bool ImplementsInterface(char *name);
     virtual bool BuildTree(SymbolTable *symT);
     virtual bool Check(SymbolTable* symT);
 };
@@ -84,6 +87,9 @@ class FnDecl : public Decl
     void SetFunctionBody(Stmt *b);
     virtual bool BuildTree(SymbolTable *symT);
     virtual bool Check(SymbolTable* symT);
+    Type *GetReturnType() { return returnType; }
+    Type *GetType() { return returnType; }
+    List<VarDecl*> *GetFormals() { return formals; }
 };
 
 #endif

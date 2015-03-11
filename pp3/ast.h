@@ -39,16 +39,16 @@
 class Node
 {
   protected:
-    yyltype *location;
-    Node *parent;
+    yyltype* location;
+    Node* parent;
 
   public:
     Node(yyltype loc);
     Node();
 
-    yyltype *GetLocation()                { return location; }
-    void SetParent(Node *p)               { parent = p; }
-    Node *GetParent()                     { return parent; }
+    yyltype* GetLocation()                { return location; }
+    void SetParent(Node* p)               { parent = p; }
+    Node* GetParent()                     { return parent; }
     virtual bool Check(SymbolTable* symT) { return true; }
 };
 
@@ -62,7 +62,7 @@ class Identifier : public Node
     friend std::ostream& operator<<(std::ostream& out, Identifier *id) { return out << id->name; }
     virtual bool Check(SymbolTable* symT);
     virtual bool Check(SymbolTable* symT, E_Type type);
-    char* getName() {  return name;  }
+    char* getName() { return name; }
 };
 
 
@@ -77,7 +77,5 @@ class Error : public Node
     Error() : Node() {}
     virtual bool Check(SymbolTable* symT) { return true; }
 };
-
-
 
 #endif

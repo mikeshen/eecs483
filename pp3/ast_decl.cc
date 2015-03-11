@@ -31,8 +31,7 @@ bool VarDecl::Check(SymbolTable* symT) {
     bool flag = type->Check(symT);
 
     if (!flag) {
-        // TODO fix the get function reference here
-        ReportError::IdentifierNotDeclared(nullptr, LookingForType);
+        ReportError::IdentifierNotDeclared(type->getIdentifier(), LookingForType);
         type = Type::errorType;
     }
     return flag;
@@ -64,6 +63,13 @@ bool ClassDecl::BuildTree(SymbolTable* symT) {
         flag = members->Nth(i)->BuildTree(classScope) ? flag : false;
 
     return true;
+}
+
+bool ClassDecl::ImplementsInterface(char *name) {
+  for (int i = 0; i < implements->NumElements(); ++i)
+    if (strcmp(name, implements->Nth(i)->getName()) == 0)
+      return true;
+  return false;
 }
 
 bool ClassDecl::Check(SymbolTable* symT) {

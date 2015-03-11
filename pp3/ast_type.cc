@@ -22,22 +22,22 @@ Type *Type::nullType   = new Type("null");
 Type *Type::stringType = new Type("string");
 Type *Type::errorType  = new Type("error");
 
-extern SymTable *globalEnv;
+extern SymbolTable *globalEnv;
 
 Type::Type(const char *n) {
     Assert(n);
     typeName = strdup(n);
 }
 
-bool NamedType::IsConvertableTo(Type *theType) {
+bool NamedType::isConvertableTo(Type *inputType) {
   Symbol *sym = globalEnv->find(id->getName(), CLASS);
   ClassDecl *classDecl = static_cast<ClassDecl*>(sym->getNode());
-  char *newName = theType->getName();
+  char *newName = inputType->getName();
 
-  if (theType->IsBuiltin())
+  if (inputType->isBuiltIn())
     return false;
 
-  if (IsEquivalentTo(theType))
+  if (IsEquivalentTo(inputType))
     return true;
 
   if (sym  == nullptr)
@@ -49,11 +49,11 @@ bool NamedType::IsConvertableTo(Type *theType) {
   return sym->getEnv()->subclassOf(newName);
 }
 
-bool NamedType::IsEquivalentTo(Type *theType) {
-  NamedType *ntheType = dynamic_cast<NamedType*>(theType);
-  if (ntheType == 0)
+bool NamedType::isEquivalentTo(Type *inputType) {
+  NamedType *otherType = dynamic_cast<NamedType*>(inputType);
+  if (otherType == 0)
     return false;
-  return strcmp(id->name(), ntheType->getName()) == 0;
+  return strcmp(id->getName(), otherType->getName()) == 0;
 }
 
 
@@ -67,22 +67,22 @@ ArrayType::ArrayType(yyltype loc, Type *et) : Type(loc) {
     (elemType=et)->SetParent(this);
 }
 
-bool ArrayType::IsConvertableTo(Type *theType) {
-  if (theType->IsEquivalentTo(Type::errorType))
+bool ArrayType::isConvertableTo(Type *inputType) {
+  if (inputType->IsEquivalentTo(Type::errorType))
     return true;
 
-  ArrayType *ntheType = dynamic_cast<ArrayType*>(theType);
-  if (ntheType == 0)
+  ArrayType *otherType = dynamic_cast<ArrayType*>(inputType);
+  if (otherType == 0)
     return false;
 
-  return elemType->IsEquivalentTo(ntheType->getElemType());
+  return elemType->IsEquivalentTo(otherType->getElemType());
 }
 
-bool ArrayType::IsEquivalentTo(Type *theType) {
-  ArrayType *ntheType = dynamic_cast<ArrayType*>(theType);
-  if (ntheType == 0) {
+bool ArrayType::isEquivalentTo(Type *inputType) {
+  ArrayType *otherType = dynamic_cast<ArrayType*>(inputType);
+  if (otherType == 0) {
     return false;
   }
-  return elemType->IsEquivalentTo(ntheType->getElemType());
+  return elemType->IsEquivalentTo(otherType->getElemType());
 }
 
