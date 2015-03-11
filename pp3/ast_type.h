@@ -33,6 +33,16 @@ class Type : public Node
     friend std::ostream& operator<<(std::ostream& out, Type *t) { t->PrintToStream(out); return out; }
     virtual bool IsEquivalentTo(Type *other) { return this == other; }
     virtual bool Check(SymbolTable* symT) { return true; }
+	virtual bool isBuiltIn() { return true; }
+	virtual bool isEquivalentTo(Type *theType) { return this == other; }
+	virtual bool isConvertableTo(Type *thType) { 
+		if (this == theType || this == errorType)
+			return true;
+		return !theType->IsBuiltin() && this == nullType;
+	}
+	virtual char* getName() { return typeName; }
+	virtual int getQualifier() { return 0; }
+	virtual Identifier* getIdentifier() { return nullptr; }
 };
 
 class NamedType : public Type
@@ -44,6 +54,12 @@ class NamedType : public Type
     NamedType(Identifier *i);
     virtual bool Check(SymbolTable* symT) { return symT->find(id->getName()) != nullptr; }
     void PrintToStream(std::ostream& out) { out << id; }
+	
+	char* getName() { return id->getName();}
+	Identifier* getIdentifier(){ return id; }
+	bool IsBuiltin() { return false; }
+	bool IsEquivalentTo(Type *other);
+	bool IsConvertableTo(Type *other);
 };
 
 class ArrayType : public Type
@@ -55,6 +71,11 @@ class ArrayType : public Type
     ArrayType(yyltype loc, Type *elemType);
     virtual bool Check(SymbolTable* symT) { return elemType->Check(symT); }
     void PrintToStream(std::ostream& out) { out << elemType << "[]"; }
+	bool isBuiltIn() { return false; }
+	bool isEquivalentTo(Type* theType);
+	bool isConvertableTo(Type* theType);
+	Type* getElemType() { return elemType; }
+	Identifier* getIdentifier() { return elemType->getIdentifier(); }
 };
 
 
