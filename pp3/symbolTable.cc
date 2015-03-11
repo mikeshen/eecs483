@@ -43,20 +43,22 @@ Symbol* SymbolTable::findInClass(char* key) {
 
 Symbol* SymbolTable::findUp(char* key) {
     SymbolTable* current = _parent;
-    Symbol* symbol = nullptr;
-    for ( ; current != nullptr; current = current->getParent())
+    for ( ; current != nullptr; current = current->getParent()) {
+        Symbol* symbol;
         if ((symbol = current->findLocal(key)) != nullptr)
             return symbol;
+    }
     return nullptr;
 }
 
 Symbol* SymbolTable::findSuper(char *key) {
-    Symbol* symbol = nullptr;
     SymbolTable* current = _super;
     if (!_super) return nullptr;
-    for ( ; current != nullptr; current = current->getSuper())
+    for ( ; current != nullptr; current = current->getSuper()) {
+        Symbol* symbol;
         if ((symbol = current->findLocal(key)) != nullptr)
             return symbol;
+    }
     return nullptr;
 }
 

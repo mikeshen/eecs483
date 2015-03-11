@@ -17,8 +17,15 @@ Node::Node() {
     location = NULL;
     parent = NULL;
 }
-	 
+
 Identifier::Identifier(yyltype loc, const char *n) : Node(loc) {
     name = strdup(n);
-} 
+}
 
+bool Identifier::Check(SymbolTable* symT) {
+    return symT->find(name) != nullptr;
+}
+
+bool Identifier::Check(SymbolTable* symT, E_Type type) {
+    return symT->find(name, type) != nullptr;
+}

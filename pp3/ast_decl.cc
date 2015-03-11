@@ -27,6 +27,17 @@ bool VarDecl::BuildTree(SymbolTable* symT) {
     return true;
 }
 
+bool VarDecl::Check(SymbolTable* symT) {
+    bool flag = type->Check(symT);
+
+    if (!flag) {
+        // TODO fix the get function reference here
+        ReportError::IdentifierNotDeclared(nullptr, LookingForType);
+        type = Type::errorType;
+    }
+    return flag;
+}
+
 ClassDecl::ClassDecl(Identifier* n, NamedType* ex, List<NamedType*>* imp, List<Decl*>* m) : Decl(n) {
     // extends can be NULL, impl & mem may be empty lists but cannot be NULL
     Assert(n != NULL && imp != NULL && m != NULL);
@@ -55,6 +66,18 @@ bool ClassDecl::BuildTree(SymbolTable* symT) {
     return true;
 }
 
+bool ClassDecl::Check(SymbolTable* symT) {
+    return true;
+/*    Assert(env != null && class_env != NULL);
+    bool flag = CheckClassParents(env);
+    flag = CheckClassInterfaces(env) ? flag : false;
+    for (int i = 0; i < members->NumElements(); i++) {
+        flag = members->Nth(i)->Check(env) ? flag : false;
+    }
+    return flag;
+*/}
+
+
 InterfaceDecl::InterfaceDecl(Identifier* n, List<Decl*>* m) : Decl(n) {
     Assert(n != NULL && m != NULL);
     (members=m)->SetParentAll(this);
@@ -75,6 +98,13 @@ bool InterfaceDecl::BuildTree(SymbolTable* symT) {
     for (int i = 0; i < members->NumElements(); ++i)
         flag = members->Nth(i)->BuildTree(interfaceScope) ? flag : false;
 
+    return flag;
+}
+
+bool InterfaceDecl::Check(SymbolTable* symT) {
+    bool flag = true;
+    for (int i = 0; i < members->NumElements(); i++)
+        flag = members->Nth(i)->Check(symT) ? flag : false;
     return flag;
 }
 
@@ -105,6 +135,15 @@ bool FnDecl::BuildTree(SymbolTable* symT) {
     return flag;
 }
 
+bool FnDecl::Check(SymbolTable* symT) {
+    bool flag = returnType->Check(symT);
+    for (int i = 0; i < formals->NumElements(); i++)
+        flag = formals->Nth(i)->Check(symT) ? flag : false;
+
+    if (body)
+        flag = body->Check(symT) ? flag : false;
+    return flag;
+}
 void FnDecl::SetFunctionBody(Stmt* b) {
     (body=b)->SetParent(this);
 }
