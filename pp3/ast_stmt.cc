@@ -8,7 +8,7 @@
 #include "ast_expr.h"
 
 
-Program::Program(List<Decl*> *d) {
+Program::Program(List<Decl*>* d) {
     Assert(d != NULL);
     (decls=d)->SetParentAll(this);
 }
@@ -30,105 +30,102 @@ void Program::Check() {
         decls->Nth(i)->Check(symT);
 }
 
-StmtBlock::StmtBlock(List<VarDecl*> *d, List<Stmt*> *s) {
+StmtBlock::StmtBlock(List<VarDecl*>* d, List<Stmt*>* s) {
     Assert(d != NULL && s != NULL);
     (decls=d)->SetParentAll(this);
     (stmts=s)->SetParentAll(this);
 }
 
-bool StmtBlock::BuildTree(SymbolTable *symT, bool inheritEnv = false) {
-  if (!inheritEnv)
-    blockScope = symT->addScope();
-  bool flag = true;
+bool StmtBlock::BuildTree(SymbolTable* symT, bool inheritEnv = false) {
+    if (!inheritEnv) blockScope = symT->addScope();
+    bool flag = true;
 
-  for (int i = 0; i < decls->NumElements(); i++)
-    flag = decls->Nth(i)->BuildTree(blockScope) ? flag : false;
+    for (int i = 0; i < decls->NumElements(); i++)
+        flag = decls->Nth(i)->BuildTree(blockScope) ? flag : false;
 
-  for (int i = 0; i < stmts->NumElements(); i++)
-    flag = stmts->Nth(i)->BuildTree(blockScope) ? flag : false;
+    for (int i = 0; i < stmts->NumElements(); i++)
+        flag = stmts->Nth(i)->BuildTree(blockScope) ? flag : false;
 
-  return true;
+    return true;
 }
 
-ConditionalStmt::ConditionalStmt(Expr *t, Stmt *b) {
+ConditionalStmt::ConditionalStmt(Expr* t, Stmt* b) {
     Assert(t != NULL && b != NULL);
     (test=t)->SetParent(this);
     (body=b)->SetParent(this);
 }
 
-ForStmt::ForStmt(Expr *i, Expr *t, Expr *s, Stmt *b): LoopStmt(t, b) {
+ForStmt::ForStmt(Expr* i, Expr* t, Expr* s, Stmt* b): LoopStmt(t, b) {
     Assert(i != NULL && t != NULL && s != NULL && b != NULL);
     (init=i)->SetParent(this);
     (step=s)->SetParent(this);
 }
 
-bool ForStmt::BuildTree(SymbolTable *symT) {
-  blockScope = symT->addScope();
-
-  blockScope->setLastNode(this);
-  return body->CheckDecls(blockScope);
+bool ForStmt::BuildTree(SymbolTable* symT) {
+    blockScope = symT->addScope();
+    blockScope->setLastNode(this);
+    return body->BuildTree(blockScope);
 }
 
-IfStmt::IfStmt(Expr *t, Stmt *tb, Stmt *eb): ConditionalStmt(t, tb) {
+IfStmt::IfStmt(Expr* t, Stmt* tb, Stmt* eb): ConditionalStmt(t, tb) {
     Assert(t != NULL && tb != NULL); // else can be NULL
     elseBody = eb;
     if (elseBody) elseBody->SetParent(this);
 }
 
-bool IfStmt::BuildTree(SymbolTable *symT) {
-  bool flag = true;
-  flag = body->BuildTree(symT) ? flag : false;
-  if (elseBody != nullptr)
-    flag = elseBody->BuildTree(symT) ? flag : false;
-  return flag;
+bool IfStmt::BuildTree(SymbolTable* symT) {
+    bool flag = true;
+    flag = body->BuildTree(symT) ? flag : false;
+    if (elseBody != nullptr)
+        flag = elseBody->BuildTree(symT) ? flag : false;
+    return flag;
 }
 
-ReturnStmt::ReturnStmt(yyltype loc, Expr *e) : Stmt(loc) {
+ReturnStmt::ReturnStmt(yyltype loc, Expr* e) : Stmt(loc) {
     Assert(e != NULL);
     (expr=e)->SetParent(this);
 }
 
-PrintStmt::PrintStmt(List<Expr*> *a) {
+PrintStmt::PrintStmt(List<Expr*>* a) {
     Assert(a != NULL);
     (args=a)->SetParentAll(this);
 }
 
-Case::Case(IntConstant *v, List<Stmt*> *s) {
+Case::Case(IntConstant* v, List<Stmt*>* s) {
     Assert(s != NULL);
     value = v;
     if (value) value->SetParent(this);
     (stmts=s)->SetParentAll(this);
 }
 
-bool Case::BuildTree(SymbolTable *symT) {
-  caseScope = symT->addScope();
-  bool flag = true;
+bool Case::BuildTree(SymbolTable* symT) {
+    caseScope = symT->addScope();
+    bool flag = true;
 
-  caseScope->setLastNode(this);
-  for (int i = 0; i < stmts->NumElements(); i++)
-    flag = stmts->Nth(i)->BuildTree(symT) ? flag : false;
+    caseScope->setLastNode(this);
+    for (int i = 0; i < stmts->NumElements(); i++)
+        flag = stmts->Nth(i)->BuildTree(symT) ? flag : false;
 
-  return flag;
+    return flag;
 }
 
-SwitchStmt::SwitchStmt(Expr *e, List<Case*> *c) {
+SwitchStmt::SwitchStmt(Expr* e, List<Case*>* c) {
     Assert(e != NULL && c != NULL);
     (expr=e)->SetParent(this);
     (cases=c)->SetParentAll(this);
 }
 
-bool SwitchStmt::BuildTree(SymbolTable *symT) {
-  bool flag = true;
-  for (int i = 0; i < cases->NumElements(); i++) 
-    flag = cases->Nth(i)->BuildTree(symT) ? flag : false;
+bool SwitchStmt::BuildTree(SymbolTable* symT) {
+    bool flag = true;
+    for (int i = 0; i < cases->NumElements(); i++)
+        flag = cases->Nth(i)->BuildTree(symT) ? flag : false;
 
-  flag = default_case->BuildTree(symT) ? flag : false;
-  return ret;
+    return flag;
 }
 
-bool WhileStmt::BuildTree(SymbolTable *symT) {
-  blockScope = symT->addScope();
+bool WhileStmt::BuildTree(SymbolTable* symT) {
+    blockScope = symT->addScope();
 
-  blockScope->setLastNode(this);
-  return body->BuildTree(blockScope);
+    blockScope->setLastNode(this);
+    return body->BuildTree(blockScope);
 }

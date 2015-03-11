@@ -27,7 +27,7 @@ class Program : public Node
     List<Decl*>* decls;
 
   public:
-    Program(List<Decl*> *declList);
+    Program(List<Decl*>* declList);
     virtual void Check();
 };
 
@@ -43,58 +43,59 @@ class Stmt : public Node
 class StmtBlock : public Stmt
 {
   protected:
-    List<VarDecl*> *decls;
-    List<Stmt*> *stmts;
+    List<VarDecl*>* decls;
+    List<Stmt*>* stmts;
 	SymbolTable* blockScope;
-	
+
   public:
-    StmtBlock(List<VarDecl*> *variableDeclarations, List<Stmt*> *statements);
-	bool BuildTree(SymbolTable *symT, bool inheritEnv);
+    StmtBlock(List<VarDecl*>* variableDeclarations, List<Stmt*>* statements);
+  	bool BuildTree(SymbolTable* symT, bool inheritEnv);
 };
 
 
 class ConditionalStmt : public Stmt
 {
   protected:
-    Expr *test;
-    Stmt *body;
+    Expr* test;
+    Stmt* body;
+    SymbolTable* blockScope;
 
   public:
-    ConditionalStmt(Expr *testExpr, Stmt *body);
+    ConditionalStmt(Expr* testExpr, Stmt* body);
 };
 
 class LoopStmt : public ConditionalStmt
 {
   public:
-    LoopStmt(Expr *testExpr, Stmt *body)
+    LoopStmt(Expr* testExpr, Stmt* body)
             : ConditionalStmt(testExpr, body) {}
 };
 
 class ForStmt : public LoopStmt
 {
   protected:
-    Expr *init, *step;
+    Expr* init,* step;
 
   public:
-    ForStmt(Expr *init, Expr *test, Expr *step, Stmt *body);
-	bool BuildTree(Symboltable *symT);
+    ForStmt(Expr* init, Expr* test, Expr* step, Stmt* body);
+  	bool BuildTree(SymbolTable* symT);
 };
 
 class WhileStmt : public LoopStmt
 {
   public:
-    WhileStmt(Expr *test, Stmt *body) : LoopStmt(test, body) {}
-	bool BuildTree(Symboltable *symT);
+    WhileStmt(Expr* test, Stmt* body) : LoopStmt(test, body) {}
+	bool BuildTree(SymbolTable* symT);
 };
 
 class IfStmt : public ConditionalStmt
 {
   protected:
-    Stmt *elseBody;
+    Stmt* elseBody;
 
   public:
-    IfStmt(Expr *test, Stmt *thenBody, Stmt *elseBody);
-	bool IfStmt::BuildTree(SymbolTable *symT);
+    IfStmt(Expr* test, Stmt* thenBody, Stmt* elseBody);
+  	bool BuildTree(SymbolTable* symT);
 };
 
 class BreakStmt : public Stmt
@@ -106,19 +107,19 @@ class BreakStmt : public Stmt
 class ReturnStmt : public Stmt
 {
   protected:
-    Expr *expr;
+    Expr* expr;
 
   public:
-    ReturnStmt(yyltype loc, Expr *expr);
+    ReturnStmt(yyltype loc, Expr* expr);
 };
 
 class PrintStmt : public Stmt
 {
   protected:
-    List<Expr*> *args;
+    List<Expr*>* args;
 
   public:
-    PrintStmt(List<Expr*> *arguments);
+    PrintStmt(List<Expr*>* arguments);
 };
 
 
@@ -127,24 +128,24 @@ class IntConstant;
 class Case : public Node
 {
   protected:
-    IntConstant *value;
-    List<Stmt*> *stmts;
-	SymbolTable* caseScope;
+    IntConstant* value;
+    List<Stmt*>* stmts;
+    SymbolTable* caseScope;
 
   public:
-    Case(IntConstant *v, List<Stmt*> *stmts);
-	bool BuildTree(SymbolTable *symT);
+    Case(IntConstant* v, List<Stmt*>* stmts);
+    bool BuildTree(SymbolTable* symT);
 };
 
 class SwitchStmt : public Stmt
 {
   protected:
-    Expr *expr;
-    List<Case*> *cases;
+    Expr* expr;
+    List<Case*>* cases;
 
   public:
-    SwitchStmt(Expr *e, List<Case*> *cases);
-	bool BuildTree(SymbolTable *symT);
+    SwitchStmt(Expr* e, List<Case*>* cases);
+    bool BuildTree(SymbolTable* symT);
 };
 
 #endif

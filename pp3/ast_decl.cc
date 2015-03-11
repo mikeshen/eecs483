@@ -7,18 +7,18 @@
 #include "ast_stmt.h"
 
 
-Decl::Decl(Identifier *n) : Node(*n->GetLocation()) {
+Decl::Decl(Identifier* n) : Node(*n->GetLocation()) {
     Assert(n != NULL);
     (id=n)->SetParent(this);
 }
 
-VarDecl::VarDecl(Identifier *n, Type *t) : Decl(n) {
+VarDecl::VarDecl(Identifier* n, Type* t) : Decl(n) {
     Assert(n != NULL && t != NULL);
     (type=t)->SetParent(this);
 }
 
-bool VarDecl::BuildTree(SymbolTable *symT) {
-    Symbol *sym = symT->findLocal(id->getName());
+bool VarDecl::BuildTree(SymbolTable* symT) {
+    Symbol* sym = symT->findLocal(id->getName());
     if (sym != nullptr) {
         ReportError::DeclConflict(this, static_cast<Decl*>(sym->getNode()));
         return false;
@@ -27,22 +27,22 @@ bool VarDecl::BuildTree(SymbolTable *symT) {
     return true;
 }
 
-ClassDecl::ClassDecl(Identifier *n, NamedType *ex, List<NamedType*> *imp, List<Decl*> *m) : Decl(n) {
+ClassDecl::ClassDecl(Identifier* n, NamedType* ex, List<NamedType*>* imp, List<Decl*>* m) : Decl(n) {
     // extends can be NULL, impl & mem may be empty lists but cannot be NULL
     Assert(n != NULL && imp != NULL && m != NULL);
     extends = ex;
-    if (extends) 
+    if (extends)
 		extends->SetParent(this);
     (implements=imp)->SetParentAll(this);
     (members=m)->SetParentAll(this);
 }
 
-bool ClassDecl::BuildTree(SymbolTable *symT) {
+bool ClassDecl::BuildTree(SymbolTable* symT) {
     bool flag = true;
-    Symbol *sym = symT->findLocal(id->getName());
+    Symbol* sym = symT->findLocal(id->getName());
 
     if (sym != nullptr) {
-        ReportError::DeclConflict(this, static_cast<Decl *>(sym->getNode()));
+        ReportError::DeclConflict(this, static_cast<Decl*>(sym->getNode()));
         return false;
     }
 
@@ -55,18 +55,18 @@ bool ClassDecl::BuildTree(SymbolTable *symT) {
     return true;
 }
 
-InterfaceDecl::InterfaceDecl(Identifier *n, List<Decl*> *m) : Decl(n) {
+InterfaceDecl::InterfaceDecl(Identifier* n, List<Decl*>* m) : Decl(n) {
     Assert(n != NULL && m != NULL);
     (members=m)->SetParentAll(this);
 }
 
 
-bool InterfaceDecl::BuildTree(SymbolTable *symT) {
+bool InterfaceDecl::BuildTree(SymbolTable* symT) {
     bool flag = true;
-    Symbol *sym = symT->findLocal(id->getName());
+    Symbol* sym = symT->findLocal(id->getName());
 
     if (sym != nullptr) {
-        ReportError::DeclConflict(this, static_cast<Decl *>(sym->getNode()));
+        ReportError::DeclConflict(this, static_cast<Decl*>(sym->getNode()));
         flag = false;
     }
 
@@ -79,32 +79,32 @@ bool InterfaceDecl::BuildTree(SymbolTable *symT) {
 }
 
 
-FnDecl::FnDecl(Identifier *n, Type *r, List<VarDecl*> *d) : Decl(n) {
+FnDecl::FnDecl(Identifier* n, Type* r, List<VarDecl*>* d) : Decl(n) {
     Assert(n != NULL && r!= NULL && d != NULL);
     (returnType=r)->SetParent(this);
     (formals=d)->SetParentAll(this);
     body = NULL;
 }
 
-bool FnDecl::BuildTree(SymbolTable *symT) {
-  bool flag = true;
-  Symbol *sym = symT->findLocal(id->getName());
+bool FnDecl::BuildTree(SymbolTable* symT) {
+    bool flag = true;
+    Symbol* sym = symT->findLocal(id->getName());
 
-  if (sym != nullptr) {
-    ReportError::DeclConflict(this, static_cast<Decl *>(sym->getNode()));
-    flag = false;
-  }
+    if (sym != nullptr) {
+        ReportError::DeclConflict(this, static_cast<Decl*>(sym->getNode()));
+        flag = false;
+    }
 
-  fnScope = symT->addUnderScope(id->getName(), this, FUNCTION);
+    fnScope = symT->addUnderScope(id->getName(), this, FUNCTION);
 
-  for (int i = 0; i < formals->NumElements(); ++i)
-    flag = formals->Nth(i)->BuildTree(fnScope) ? flag : false;
+    for (int i = 0; i < formals->NumElements(); ++i)
+        flag = formals->Nth(i)->BuildTree(fnScope) ? flag : false;
 
-  if (!(body->BuildTree(fnScope)))
-      return false;
-  return flag;
+    if (!(body->BuildTree(fnScope)))
+        return false;
+    return flag;
 }
 
-void FnDecl::SetFunctionBody(Stmt *b) {
+void FnDecl::SetFunctionBody(Stmt* b) {
     (body=b)->SetParent(this);
 }
