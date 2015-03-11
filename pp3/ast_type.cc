@@ -29,8 +29,6 @@ Type::Type(const char *n) {
     typeName = strdup(n);
 }
 
-<<<<<<< HEAD
-=======
 bool NamedType::IsConvertableTo(Type *theType) {
   Symbol *sym = globalEnv->find(id->getName(), CLASS);
   ClassDecl *classDecl = static_cast<ClassDecl*>(sym->getNode());
@@ -58,8 +56,7 @@ bool NamedType::IsEquivalentTo(Type *theType) {
   return strcmp(id->name(), ntheType->getName()) == 0;
 }
 
-	
->>>>>>> origin/master
+
 NamedType::NamedType(Identifier *i) : Type(*i->GetLocation()) {
     Assert(i != NULL);
     (id=i)->SetParent(this);
