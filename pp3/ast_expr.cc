@@ -8,7 +8,6 @@
 #include <string.h>
 #include "errors.h"
 
-
 IntConstant::IntConstant(yyltype loc, int val) : Expr(loc) {
     value = val;
 }
@@ -60,18 +59,18 @@ bool ArithmeticExpr::Check(SymbolTable* symT) { ////////////////////////////////
   rightType = right->getEvalType();
 
   if (left) {
-    if (leftType->IsConvertableTo(Type::intType) && rightType->IsConvertableTo(Type::intType))
+    if (leftType->isConvertableTo(Type::intType) && rightType->isConvertableTo(Type::intType))
       setEvalType(Type::intType);
-	else if (leftType->IsConvertableTo(Type::doubleType) && rightType->IsConvertableTo(Type::doubleType))
+	else if (leftType->isConvertableTo(Type::doubleType) && rightType->isConvertableTo(Type::doubleType))
       setEvalType(Type::doubleType);
 	else {
       ReportError::IncompatibleOperands(op, leftType, rightType);
       setEvalType(Type::errorType);
       flag = false;
     }
-  } 
+  }
   else {
-    if (!rightType->IsConvertableTo(Type::intType) && !rightType->IsConvertableTo(Type::doubleType)) {
+    if (!rightType->isConvertableTo(Type::intType) && !rightType->isConvertableTo(Type::doubleType)) {
       ReportError::IncompatibleOperand(op, rightType);
       setEvalType(Type::errorType);
     }

@@ -1,80 +1,80 @@
 #include "ast_decl.h"
 #include "symbolTable.h"
 /** Class: Symbol **/
-Symbol::Symbol(E_Type t, Node* n) : type(t), node(n), env(nullptr) {}
+Symbol::Symbol(E_Type t, Node* n) : type(t), node(n), env(NULL) {}
 
 Symbol::Symbol(E_Type t, Node* n, SymbolTable* e) : type(t), node(n), env(e) {}
 
 /** Class: SymbolTable **/
-SymbolTable::SymbolTable() : _parent(nullptr), _super(nullptr), _this(nullptr),
-                             ownernode(nullptr), lastnode(nullptr),
+SymbolTable::SymbolTable() : _parent(NULL), _super(NULL), _this(NULL),
+                             ownernode(NULL), lastnode(NULL),
                              table(new Hashtable<Symbol*>),
                              blocks(new List<SymbolTable*>) {}
 
 Node* SymbolTable::getThisClass() {
-    if (!_this) return nullptr;
+    if (!_this) return NULL;
     SymbolTable* temp = _this;
     return temp->getOwnerNode();
 }
 
 Symbol *SymbolTable::find(char* key) {
     SymbolTable* current = this;
-    Symbol* symbol = nullptr;
-    for ( ; current != nullptr; current = current->getParent())
-        if ((symbol = current->findLocal(key)) != nullptr)
+    Symbol* symbol = NULL;
+    for ( ; current != NULL; current = current->getParent())
+        if ((symbol = current->findLocal(key)) != NULL)
             return symbol;
-    if (_super && (symbol = findSuper(key)) != nullptr) return symbol;
-    return nullptr;
+    if (_super && (symbol = findSuper(key)) != NULL) return symbol;
+    return NULL;
 }
 
 Symbol* SymbolTable::findLocal(char* key) {
-    Symbol* symbol = nullptr;
-    if ((symbol = table->Lookup(key)) != nullptr) return symbol;
-    if (_super && (symbol = findSuper(key)) != nullptr) return symbol;
-    return nullptr;
+    Symbol* symbol = NULL;
+    if ((symbol = table->Lookup(key)) != NULL) return symbol;
+    if (_super && (symbol = findSuper(key)) != NULL) return symbol;
+    return NULL;
 }
 
 Symbol* SymbolTable::findInClass(char* key) {
-    Symbol* symbol = nullptr;
-    if ((symbol = findLocal(key)) != nullptr) return symbol;
-    if ((symbol = findSuper(key)) != nullptr)  return symbol;
-    return nullptr;
+    Symbol* symbol = NULL;
+    if ((symbol = findLocal(key)) != NULL) return symbol;
+    if ((symbol = findSuper(key)) != NULL)  return symbol;
+    return NULL;
 }
 
 Symbol* SymbolTable::findUp(char* key) {
     SymbolTable* current = _parent;
-    for ( ; current != nullptr; current = current->getParent()) {
+    for ( ; current != NULL; current = current->getParent()) {
         Symbol* symbol;
-        if ((symbol = current->findLocal(key)) != nullptr)
+        if ((symbol = current->findLocal(key)) != NULL)
             return symbol;
     }
-    return nullptr;
+    return NULL;
 }
 
 Symbol* SymbolTable::findSuper(char *key) {
     SymbolTable* current = _super;
-    if (!_super) return nullptr;
-    for ( ; current != nullptr; current = current->getSuper()) {
+    if (!_super) return NULL;
+    for ( ; current != NULL; current = current->getSuper()) {
         Symbol* symbol;
-        if ((symbol = current->findLocal(key)) != nullptr)
+        if ((symbol = current->findLocal(key)) != NULL)
             return symbol;
     }
-    return nullptr;
+    return NULL;
 }
 
 Symbol* SymbolTable::findClassField(char* className, char* fieldName) {
     Symbol* classSymbol = find(className);
-    if (classSymbol == nullptr) return nullptr;
+    if (classSymbol == NULL) return NULL;
     return classSymbol->getEnv()->find(fieldName);
 }
 
 bool SymbolTable::subclassOf(char *key) {
 /*    SymbolTable* current = _super;
-    ClassDecl* classDecl = nullptr;
+    ClassDecl* classDecl = NULL;
     if (!_super) {
         return false;
     }
-    for ( ; current != nullptr; current = current->getSuper()) {
+    for ( ; current != NULL; current = current->getSuper()) {
         classDecl = dynamic_cast<ClassDecl*>(current->getRefNode());
         if (classDecl == 0) {
             continue;
@@ -108,14 +108,14 @@ SymbolTable* SymbolTable::addScope() {
 
 SymbolTable* SymbolTable::addUnderScope(char* key, Node* node, E_Type type) {
     SymbolTable* newEnv = new SymbolTable;
-    Symbol* refNode = nullptr;
+    Symbol* refNode = NULL;
     newEnv->setParent(this);
     if (_this)
         newEnv->setThis(_this);
     refNode = new Symbol(type, node, newEnv);
     table->Enter(key, refNode, false);
     newEnv->setOwnerNode(node);
-    lastnode = nullptr;
+    lastnode = NULL;
     return newEnv;
 }
 

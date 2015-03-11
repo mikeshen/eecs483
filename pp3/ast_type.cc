@@ -38,7 +38,7 @@ bool NamedType::isConvertableTo(Type *inputType) {
         return false;
     else if (IsEquivalentTo(inputType))
         return true;
-    else if (sym == nullptr)
+    else if (sym == NULL)
         return false;
     else if (classDecl->ImplementsInterface(newName))
         return true;

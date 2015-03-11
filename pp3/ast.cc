@@ -23,9 +23,9 @@ Identifier::Identifier(yyltype loc, const char *n) : Node(loc) {
 }
 
 bool Identifier::Check(SymbolTable* symT) {
-    return symT->find(name) != nullptr;
+    return symT->find(name) != NULL;
 }
 
 bool Identifier::Check(SymbolTable* symT, E_Type type) {
-    return symT->find(name, type) != nullptr;
+    return symT->find(name, type) != NULL;
 }

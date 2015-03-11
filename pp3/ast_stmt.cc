@@ -77,7 +77,7 @@ IfStmt::IfStmt(Expr* t, Stmt* tb, Stmt* eb): ConditionalStmt(t, tb) {
 bool IfStmt::BuildTree(SymbolTable* symT) {
     bool flag = true;
     flag = body->BuildTree(symT) ? flag : false;
-    if (elseBody != nullptr)
+    if (elseBody != NULL)
         flag = elseBody->BuildTree(symT) ? flag : false;
     return flag;
 }

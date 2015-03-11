@@ -19,7 +19,7 @@ VarDecl::VarDecl(Identifier* n, Type* t) : Decl(n) {
 
 bool VarDecl::BuildTree(SymbolTable* symT) {
     Symbol* sym = symT->findLocal(id->getName());
-    if (sym != nullptr) {
+    if (sym != NULL) {
         ReportError::DeclConflict(this, static_cast<Decl*>(sym->getNode()));
         return false;
     }
@@ -51,7 +51,7 @@ bool ClassDecl::BuildTree(SymbolTable* symT) {
     bool flag = true;
     Symbol* sym = symT->findLocal(id->getName());
 
-    if (sym != nullptr) {
+    if (sym != NULL) {
         ReportError::DeclConflict(this, static_cast<Decl*>(sym->getNode()));
         return false;
     }
@@ -94,7 +94,7 @@ bool InterfaceDecl::BuildTree(SymbolTable* symT) {
     bool flag = true;
     Symbol* sym = symT->findLocal(id->getName());
 
-    if (sym != nullptr) {
+    if (sym != NULL) {
         ReportError::DeclConflict(this, static_cast<Decl*>(sym->getNode()));
         flag = false;
     }
@@ -126,7 +126,7 @@ bool FnDecl::BuildTree(SymbolTable* symT) {
     bool flag = true;
     Symbol* sym = symT->findLocal(id->getName());
 
-    if (sym != nullptr) {
+    if (sym != NULL) {
         ReportError::DeclConflict(this, static_cast<Decl*>(sym->getNode()));
         flag = false;
     }

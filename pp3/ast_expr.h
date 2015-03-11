@@ -23,91 +23,91 @@ class Type; // for NewArray
 
 class Expr : public Stmt
 {
-  public:
+public:
     Expr(yyltype loc) : Stmt(loc) {}
     Expr() : Stmt() {}
     virtual bool Check(SymbolTable* symT) { return true; }
-	void setEvalType(Type* eType) { evaluatedType = eType; }
-	TYpe* getEvalType() { return evaluatedType; }
-	
-	protected:
+    void setEvalType(Type* eType) { evaluatedType = eType; }
+    Type* getEvalType() { return evaluatedType; }
+
+protected:
 	Type* evaluatedType;
 };
 
 /* This node type is used for those places where an expression is optional.
  * We could use a NULL pointer, but then it adds a lot of checking for
  * NULL. By using a valid, but no-op, node, we save that trouble */
-class EmptyExpr : public Expr
-{
-  public:
+ class EmptyExpr : public Expr
+ {
+ public:
     virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class IntConstant : public Expr
 {
-  protected:
+protected:
     int value;
 
-  public:
+public:
     IntConstant(yyltype loc, int val);
     virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class DoubleConstant : public Expr
 {
-  protected:
+protected:
     double value;
 
-  public:
+public:
     DoubleConstant(yyltype loc, double val);
     virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class BoolConstant : public Expr
 {
-  protected:
+protected:
     bool value;
 
-  public:
+public:
     BoolConstant(yyltype loc, bool val);
     virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class StringConstant : public Expr
 {
-  protected:
+protected:
     char *value;
 
-  public:
+public:
     StringConstant(yyltype loc, const char *val);
     virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class NullConstant: public Expr
 {
-  public:
+public:
     NullConstant(yyltype loc) : Expr(loc) {}
     virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class Operator : public Node
 {
-  protected:
+protected:
     char tokenString[4];
 
-  public:
+public:
     Operator(yyltype loc, const char *tok);
     friend std::ostream& operator<<(std::ostream& out, Operator *o) { return out << o->tokenString; }
     virtual bool Check(SymbolTable* symT) { return true; }
- };
+};
 
 class CompoundExpr : public Expr
 {
-  protected:
+protected:
     Operator *op;
     Expr *left, *right; // left will be NULL if unary
 
-  public:
+public:
     CompoundExpr(Expr *lhs, Operator *op, Expr *rhs); // for binary
     CompoundExpr(Operator *op, Expr *rhs);             // for unary
     virtual bool Check(SymbolTable* symT) { return true; }
@@ -115,63 +115,63 @@ class CompoundExpr : public Expr
 
 class ArithmeticExpr : public CompoundExpr
 {
-  public:
+public:
     ArithmeticExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
     ArithmeticExpr(Operator *op, Expr *rhs) : CompoundExpr(op,rhs) {}
-	bool Check(SymbolTable* symT);
+    bool Check(SymbolTable* symT);
 };
 
 class RelationalExpr : public CompoundExpr
 {
-  public:
+public:
     RelationalExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
-	bool Check(SymbolTable* symT);
+    // bool Check(SymbolTable* symT);
 };
 
 class EqualityExpr : public CompoundExpr
 {
-  public:
+public:
     EqualityExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
-	bool Check(SymbolTable* symT);
+    // bool Check(SymbolTable* symT);
 };
 
 class LogicalExpr : public CompoundExpr
 {
-  public:
+public:
     LogicalExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
     LogicalExpr(Operator *op, Expr *rhs) : CompoundExpr(op,rhs) {}
-	bool Check(SymbolTable* symT);
+    // bool Check(SymbolTable* symT);
 };
 
 class AssignExpr : public CompoundExpr
 {
-  public:
+public:
     AssignExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
-	bool Check(SymbolTable* symT);
+    // bool Check(SymbolTable* symT);
 };
 
 class LValue : public Expr
 {
-  public:
+public:
     LValue(yyltype loc) : Expr(loc) {}
-	bool Check(SymbolTable* symT) { return true; }
+    // bool Check(SymbolTable* symT) { return true; }
 };
 
 class This : public Expr
 {
-  public:
+public:
     This(yyltype loc) : Expr(loc) {}
-	bool Check(SymbolTable* symT);
+    // bool Check(SymbolTable* symT);
 };
 
 class ArrayAccess : public LValue
 {
-  protected:
+protected:
     Expr *base, *subscript;
 
-  public:
+public:
     ArrayAccess(yyltype loc, Expr *base, Expr *subscript);
-	bool Check(SymbolTable* symT);
+    // bool Check(SymbolTable* symT);
 };
 
 /* Note that field access is used both for qualified names
@@ -179,76 +179,76 @@ class ArrayAccess : public LValue
  * know for sure whether there is an implicit "this." in
  * front until later on, so we use one node type for either
  * and sort it out later. */
-class FieldAccess : public LValue
-{
-  protected:
+ class FieldAccess : public LValue
+ {
+ protected:
     Expr *base;	// will be NULL if no explicit base
     Identifier *field;
 
-  public:
+public:
     FieldAccess(Expr *base, Identifier *field); //ok to pass NULL base
-	bool Check(SymbolTable* symT);
+    // bool Check(SymbolTable* symT);
 };
 
 /* Like field access, call is used both for qualified base.field()
  * and unqualified field().  We won't figure out until later
  * whether we need implicit "this." so we use one node type for either
  * and sort it out later. */
-class Call : public Expr
-{
-  protected:
+ class Call : public Expr
+ {
+ protected:
     Expr *base;	// will be NULL if no explicit base
     Identifier *field;
     List<Expr*> *actuals;
 
-  public:
+public:
     Call(yyltype loc, Expr *base, Identifier *field, List<Expr*> *args);
-	bool Check(SymbolTable* symT);
+    // bool Check(SymbolTable* symT);
 };
 
 class NewExpr : public Expr
 {
-  protected:
+protected:
     NamedType *cType;
 
-  public:
+public:
     NewExpr(yyltype loc, NamedType *clsType);
-	bool Check(SymbolTable* symT);
+    // bool Check(SymbolTable* symT);
 };
 
 class NewArrayExpr : public Expr
 {
-  protected:
+protected:
     Expr *size;
     Type *elemType;
 
-  public:
+public:
     NewArrayExpr(yyltype loc, Expr *sizeExpr, Type *elemType);
-	bool Check(SymbolTable* symT);
+    // bool Check(SymbolTable* symT);
 };
 
 class ReadIntegerExpr : public Expr
 {
-  public:
+public:
     ReadIntegerExpr(yyltype loc) : Expr(loc) {}
-	bool Check(SymbolTable* symT);
+    // bool Check(SymbolTable* symT);
 };
 
 class ReadLineExpr : public Expr
 {
-  public:
+public:
     ReadLineExpr(yyltype loc) : Expr (loc) {}
-	bool Check(SymbolTable* symT);
+    // bool Check(SymbolTable* symT);
 };
 
 class PostfixExpr : public Expr
 {
-   protected:
-     LValue *lvalue;
-     Operator *op;
-  public:
+protected:
+    LValue *lvalue;
+    Operator *op;
+public:
     PostfixExpr(LValue *lv, Operator *op);
-	bool Check(SymbolTable* symT);
+    // bool Check(SymbolTable* symT);
 };
 
 

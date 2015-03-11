@@ -30,7 +30,7 @@ class Decl : public Node
     friend std::ostream& operator<<(std::ostream& out, Decl *d) { return out << d->id; }
     virtual bool BuildTree(SymbolTable* symT) { return true; }
     virtual bool Check(SymbolTable* symT) { return true; }
-    virtual Type* getType() { return nullptr; }
+    virtual Type* getType() { return NULL; }
     char* getName() { return id->getName(); }
 };
 
