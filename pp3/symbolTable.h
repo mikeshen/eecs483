@@ -68,11 +68,11 @@ public:
         return _parent;
     }
 
-    void setSuper(SymbolTable *s) {
+    void setSuper(SymbolTable* s) {
         _super = s;
     }
 
-    SymbolTable *getSuper() {
+    SymbolTable* getSuper() {
         return _super;
     }
 
@@ -146,7 +146,7 @@ public:
 
     bool subclassOf(char* key);
 
-    bool add(char *key, Node *node);
+    bool add(char* key, Node* node);
 
     SymbolTable* addScope();
 

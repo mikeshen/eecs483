@@ -26,7 +26,7 @@ class Expr : public Stmt
 public:
     Expr(yyltype loc) : Stmt(loc) {}
     Expr() : Stmt() {}
-    virtual bool Check(SymbolTable* symT) { return true; }
+    virtual bool Check(SymbolTable* symT) { std::cout << "expr check reached\n"; return true; }
     void setEvalType(Type* eType) { evaluatedType = eType; }
     Type* getEvalType() { return evaluatedType; }
 
@@ -40,7 +40,8 @@ protected:
  class EmptyExpr : public Expr
  {
  public:
-    virtual bool Check(SymbolTable* symT) { return true; }
+    EmptyExpr();
+    virtual bool Check(SymbolTable* symT) { std::cout << "empty expr check reached\n"; return true; }
 };
 
 class IntConstant : public Expr
@@ -50,7 +51,7 @@ protected:
 
 public:
     IntConstant(yyltype loc, int val);
-    virtual bool Check(SymbolTable* symT) { return true; }
+    virtual bool Check(SymbolTable* symT) { std::cout << "IntConstant check reached\n";return true; }
 };
 
 class DoubleConstant : public Expr
@@ -60,7 +61,7 @@ protected:
 
 public:
     DoubleConstant(yyltype loc, double val);
-    virtual bool Check(SymbolTable* symT) { return true; }
+    virtual bool Check(SymbolTable* symT) { std::cout << "DoubleConstant check reached\n"; return true; }
 };
 
 class BoolConstant : public Expr
@@ -70,24 +71,24 @@ protected:
 
 public:
     BoolConstant(yyltype loc, bool val);
-    virtual bool Check(SymbolTable* symT) { return true; }
+    virtual bool Check(SymbolTable* symT) { std::cout << "BoolConstant reached\n"; return true; }
 };
 
 class StringConstant : public Expr
 {
 protected:
-    char *value;
+    char* value;
 
 public:
-    StringConstant(yyltype loc, const char *val);
-    virtual bool Check(SymbolTable* symT) { return true; }
+    StringConstant(yyltype loc, const char* val);
+    virtual bool Check(SymbolTable* symT) { std::cout << "StringConstant check reached\n"; return true; }
 };
 
 class NullConstant: public Expr
 {
 public:
-    NullConstant(yyltype loc) : Expr(loc) {}
-    virtual bool Check(SymbolTable* symT) { return true; }
+    NullConstant(yyltype loc);
+    virtual bool Check(SymbolTable* symT) { std::cout << "NullConstant check reached\n"; return true; }
 };
 
 class Operator : public Node
@@ -96,82 +97,83 @@ protected:
     char tokenString[4];
 
 public:
-    Operator(yyltype loc, const char *tok);
-    friend std::ostream& operator<<(std::ostream& out, Operator *o) { return out << o->tokenString; }
-    virtual bool Check(SymbolTable* symT) { return true; }
+    Operator(yyltype loc, const char* tok);
+    friend std::ostream& operator<<(std::ostream& out, Operator* o) { return out << o->tokenString; }
+    virtual bool Check(SymbolTable* symT) { std::cout << "Operator check reached\n"; return true; }
 };
 
 class CompoundExpr : public Expr
 {
 protected:
-    Operator *op;
-    Expr *left, *right; // left will be NULL if unary
+    int test;
+    Operator* op;
+    Expr* left,* right; // left will be NULL if unary
 
 public:
-    CompoundExpr(Expr *lhs, Operator *op, Expr *rhs); // for binary
-    CompoundExpr(Operator *op, Expr *rhs);             // for unary
-    virtual bool Check(SymbolTable* symT) { return true; }
+    CompoundExpr(Expr* lhs, Operator* op, Expr* rhs);  // for binary
+    CompoundExpr(Operator* op, Expr* rhs);             // for unary
+    virtual bool Check(SymbolTable* symT) { std::cout << "CompoundExpr check reached\n"; return true; }
 };
 
 class ArithmeticExpr : public CompoundExpr
 {
 public:
-    ArithmeticExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
-    ArithmeticExpr(Operator *op, Expr *rhs) : CompoundExpr(op,rhs) {}
-    bool Check(SymbolTable* symT);
+    ArithmeticExpr(Expr* lhs, Operator* op, Expr* rhs) : CompoundExpr(lhs,op,rhs) {}
+    ArithmeticExpr(Operator* op, Expr* rhs) : CompoundExpr(op,rhs) {}
+    virtual bool Check(SymbolTable* symT);
 };
 
 class RelationalExpr : public CompoundExpr
 {
 public:
-    RelationalExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
-    // bool Check(SymbolTable* symT);
+    RelationalExpr(Expr* lhs, Operator* op, Expr* rhs) : CompoundExpr(lhs,op,rhs) {}
+    virtual bool Check(SymbolTable* symT);
 };
 
 class EqualityExpr : public CompoundExpr
 {
 public:
-    EqualityExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
-    // bool Check(SymbolTable* symT);
+    EqualityExpr(Expr* lhs, Operator* op, Expr* rhs) : CompoundExpr(lhs,op,rhs) {}
+    virtual bool Check(SymbolTable* symT);
 };
 
 class LogicalExpr : public CompoundExpr
 {
 public:
-    LogicalExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
-    LogicalExpr(Operator *op, Expr *rhs) : CompoundExpr(op,rhs) {}
-    // bool Check(SymbolTable* symT);
+    LogicalExpr(Expr* lhs, Operator* op, Expr* rhs) : CompoundExpr(lhs,op,rhs) {}
+    LogicalExpr(Operator* op, Expr* rhs) : CompoundExpr(op,rhs) {}
+    virtual bool Check(SymbolTable* symT);
 };
 
 class AssignExpr : public CompoundExpr
 {
 public:
-    AssignExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
-    // bool Check(SymbolTable* symT);
+    AssignExpr(Expr* lhs, Operator* op, Expr* rhs) : CompoundExpr(lhs,op,rhs) {}
+    virtual bool Check(SymbolTable* symT);
 };
 
 class LValue : public Expr
 {
 public:
     LValue(yyltype loc) : Expr(loc) {}
-    // bool Check(SymbolTable* symT) { return true; }
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class This : public Expr
 {
 public:
     This(yyltype loc) : Expr(loc) {}
-    // bool Check(SymbolTable* symT);
+    virtual bool Check(SymbolTable* symT);
 };
 
 class ArrayAccess : public LValue
 {
 protected:
-    Expr *base, *subscript;
+    Expr* base,* subscript;
 
 public:
-    ArrayAccess(yyltype loc, Expr *base, Expr *subscript);
-    // bool Check(SymbolTable* symT);
+    ArrayAccess(yyltype loc, Expr* base, Expr* subscript);
+    virtual bool Check(SymbolTable* symT);
 };
 
 /* Note that field access is used both for qualified names
@@ -182,12 +184,13 @@ public:
  class FieldAccess : public LValue
  {
  protected:
-    Expr *base;	// will be NULL if no explicit base
-    Identifier *field;
+    Expr* base;	// will be NULL if no explicit base
+    Identifier* field;
 
 public:
-    FieldAccess(Expr *base, Identifier *field); //ok to pass NULL base
-    // bool Check(SymbolTable* symT);
+    FieldAccess(Expr* base, Identifier* field); //ok to pass NULL base
+    virtual bool Check(SymbolTable* symT);
+    bool CheckBase(SymbolTable* symT);
 };
 
 /* Like field access, call is used both for qualified base.field()
@@ -197,58 +200,58 @@ public:
  class Call : public Expr
  {
  protected:
-    Expr *base;	// will be NULL if no explicit base
-    Identifier *field;
-    List<Expr*> *actuals;
+    Expr* base;	// will be NULL if no explicit base
+    Identifier* field;
+    List<Expr*>* actuals;
 
 public:
-    Call(yyltype loc, Expr *base, Identifier *field, List<Expr*> *args);
-    // bool Check(SymbolTable* symT);
+    Call(yyltype loc, Expr* base, Identifier* field, List<Expr*>* args);
+    // virtual bool Check(SymbolTable* symT);
 };
 
 class NewExpr : public Expr
 {
 protected:
-    NamedType *cType;
+    NamedType* cType;
 
 public:
-    NewExpr(yyltype loc, NamedType *clsType);
-    // bool Check(SymbolTable* symT);
+    NewExpr(yyltype loc, NamedType* clsType);
+    // virtual bool Check(SymbolTable* symT);
 };
 
 class NewArrayExpr : public Expr
 {
 protected:
-    Expr *size;
-    Type *elemType;
+    Expr* size;
+    Type* elemType;
 
 public:
-    NewArrayExpr(yyltype loc, Expr *sizeExpr, Type *elemType);
-    // bool Check(SymbolTable* symT);
+    NewArrayExpr(yyltype loc, Expr* sizeExpr, Type* elemType);
+    // virtual bool Check(SymbolTable* symT);
 };
 
 class ReadIntegerExpr : public Expr
 {
 public:
     ReadIntegerExpr(yyltype loc) : Expr(loc) {}
-    // bool Check(SymbolTable* symT);
+    // virtual bool Check(SymbolTable* symT);
 };
 
 class ReadLineExpr : public Expr
 {
 public:
     ReadLineExpr(yyltype loc) : Expr (loc) {}
-    // bool Check(SymbolTable* symT);
+    // virtual bool Check(SymbolTable* symT);
 };
 
 class PostfixExpr : public Expr
 {
 protected:
-    LValue *lvalue;
-    Operator *op;
+    LValue* lvalue;
+    Operator* op;
 public:
-    PostfixExpr(LValue *lv, Operator *op);
-    // bool Check(SymbolTable* symT);
+    PostfixExpr(LValue* lv, Operator* op);
+    // virtual bool Check(SymbolTable* symT);
 };
 
 

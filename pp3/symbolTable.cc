@@ -17,7 +17,7 @@ Node* SymbolTable::getThisClass() {
     return temp->getOwnerNode();
 }
 
-Symbol *SymbolTable::find(char* key) {
+Symbol* SymbolTable::find(char* key) {
     SymbolTable* current = this;
     Symbol* symbol = NULL;
     for ( ; current != NULL; current = current->getParent())
@@ -51,7 +51,7 @@ Symbol* SymbolTable::findUp(char* key) {
     return NULL;
 }
 
-Symbol* SymbolTable::findSuper(char *key) {
+Symbol* SymbolTable::findSuper(char* key) {
     SymbolTable* current = _super;
     if (!_super) return NULL;
     for ( ; current != NULL; current = current->getSuper()) {
@@ -68,7 +68,7 @@ Symbol* SymbolTable::findClassField(char* className, char* fieldName) {
     return classSymbol->getEnv()->find(fieldName);
 }
 
-bool SymbolTable::subclassOf(char *key) {
+bool SymbolTable::subclassOf(char* key) {
 /*    SymbolTable* current = _super;
     ClassDecl* classDecl = NULL;
     if (!_super) {

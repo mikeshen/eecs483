@@ -23,25 +23,26 @@ class Stmt;
 class Decl : public Node
 {
   protected:
-    Identifier *id;
+    Identifier* id;
 
   public:
-    Decl(Identifier *name);
-    friend std::ostream& operator<<(std::ostream& out, Decl *d) { return out << d->id; }
+    Decl(Identifier* name);
+    friend std::ostream& operator<<(std::ostream& out, Decl* d) { return out << d->id; }
     virtual bool BuildTree(SymbolTable* symT) { return true; }
     virtual bool Check(SymbolTable* symT) { return true; }
     virtual Type* getType() { return NULL; }
     char* getName() { return id->getName(); }
+    Identifier* getIdentifier() { return id; }
 };
 
 class VarDecl : public Decl
 {
   protected:
-    Type *type;
+    Type* type;
 
   public:
-    VarDecl(Identifier *name, Type *type);
-    virtual bool BuildTree(SymbolTable *symT);
+    VarDecl(Identifier* name, Type* type);
+    virtual bool BuildTree(SymbolTable* symT);
     virtual bool Check(SymbolTable* symT);
     virtual Type* getType() { return type; }
 };
@@ -49,47 +50,47 @@ class VarDecl : public Decl
 class ClassDecl : public Decl
 {
   protected:
-    List<Decl*> *members;
-    NamedType *extends;
-    List<NamedType*> *implements;
+    List<Decl*>* members;
+    NamedType* extends;
+    List<NamedType*>* implements;
     SymbolTable* classScope;
 
   public:
-    ClassDecl(Identifier *name, NamedType *extends,
-              List<NamedType*> *implements, List<Decl*> *members);
-    bool ImplementsInterface(char *name);
-    virtual bool BuildTree(SymbolTable *symT);
+    ClassDecl(Identifier* name, NamedType* extends,
+              List<NamedType*>* implements, List<Decl*>* members);
+    bool ImplementsInterface(char* name);
+    virtual bool BuildTree(SymbolTable* symT);
     virtual bool Check(SymbolTable* symT);
 };
 
 class InterfaceDecl : public Decl
 {
   protected:
-    List<Decl*> *members;
+    List<Decl*>* members;
     SymbolTable* interfaceScope;
 
   public:
-    InterfaceDecl(Identifier *name, List<Decl*> *members);
-    virtual bool BuildTree(SymbolTable *symT);
+    InterfaceDecl(Identifier* name, List<Decl*>* members);
+    virtual bool BuildTree(SymbolTable* symT);
     virtual bool Check(SymbolTable* symT);
 };
 
 class FnDecl : public Decl
 {
   protected:
-    List<VarDecl*> *formals;
-    Type *returnType;
-    Stmt *body;
+    List<VarDecl*>* formals;
+    Type* returnType;
+    Stmt* body;
     SymbolTable* fnScope;
 
   public:
-    FnDecl(Identifier *name, Type *returnType, List<VarDecl*> *formals);
-    void SetFunctionBody(Stmt *b);
-    virtual bool BuildTree(SymbolTable *symT);
+    FnDecl(Identifier* name, Type* returnType, List<VarDecl*>* formals);
+    void SetFunctionBody(Stmt* b);
+    virtual bool BuildTree(SymbolTable* symT);
     virtual bool Check(SymbolTable* symT);
-    Type *GetReturnType() { return returnType; }
-    Type *GetType() { return returnType; }
-    List<VarDecl*> *GetFormals() { return formals; }
+    Type* GetReturnType() { return returnType; }
+    Type* GetType() { return returnType; }
+    List<VarDecl*>* GetFormals() { return formals; }
 };
 
 #endif

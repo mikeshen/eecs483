@@ -28,8 +28,8 @@ bool VarDecl::BuildTree(SymbolTable* symT) {
 }
 
 bool VarDecl::Check(SymbolTable* symT) {
+    std::cout << "Vardecl Check reached" << std::endl;
     bool flag = type->Check(symT);
-
     if (!flag) {
         ReportError::IdentifierNotDeclared(type->getIdentifier(), LookingForType);
         type = Type::errorType;
@@ -65,7 +65,7 @@ bool ClassDecl::BuildTree(SymbolTable* symT) {
     return true;
 }
 
-bool ClassDecl::ImplementsInterface(char *name) {
+bool ClassDecl::ImplementsInterface(char* name) {
   for (int i = 0; i < implements->NumElements(); ++i)
     if (strcmp(name, implements->Nth(i)->getName()) == 0)
       return true;
@@ -142,12 +142,14 @@ bool FnDecl::BuildTree(SymbolTable* symT) {
 }
 
 bool FnDecl::Check(SymbolTable* symT) {
+    std::cout << "FnDecl Reached" << std::endl;
     bool flag = returnType->Check(symT);
     for (int i = 0; i < formals->NumElements(); i++)
         flag = formals->Nth(i)->Check(symT) ? flag : false;
-
+    std::cout << "Passed formals\n";
     if (body)
         flag = body->Check(symT) ? flag : false;
+    std::cout << "Passed body\n";
     return flag;
 }
 void FnDecl::SetFunctionBody(Stmt* b) {

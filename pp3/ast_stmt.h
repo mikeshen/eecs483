@@ -16,110 +16,120 @@
 #include "list.h"
 #include "ast.h"
 
-class Decl;
-class VarDecl;
-class Expr;
+ class Decl;
+ class VarDecl;
+ class Expr;
 
-class Program : public Node
-{
-  protected:
-    SymbolTable* symT;
+ class Program : public Node
+ {
+ protected:
+    SymbolTable* programScope;
     List<Decl*>* decls;
 
-  public:
+public:
     Program(List<Decl*>* declList);
     virtual void Check();
 };
 
 class Stmt : public Node
 {
-  public:
+public:
     Stmt() : Node() {}
     Stmt(yyltype loc) : Node(loc) {}
-    virtual bool BuildTree(SymbolTable* symT, bool inheritEnv = false) { return true; }
-    virtual bool Check(SymbolTable* symT) { return true; }
+    virtual bool BuildTree(SymbolTable* symT) { return true; }
+    virtual bool Check(SymbolTable* symT) { std::cout << "Stmt check reached\n"; return true; }
 };
 
 class StmtBlock : public Stmt
 {
-  protected:
+protected:
     List<VarDecl*>* decls;
     List<Stmt*>* stmts;
-	SymbolTable* blockScope;
+    SymbolTable* blockScope;
 
-  public:
+public:
     StmtBlock(List<VarDecl*>* variableDeclarations, List<Stmt*>* statements);
-  	bool BuildTree(SymbolTable* symT, bool inheritEnv);
+    virtual bool BuildTree(SymbolTable* symT);
+    virtual bool Check(SymbolTable* symT);
 };
 
 
 class ConditionalStmt : public Stmt
 {
-  protected:
+protected:
     Expr* test;
     Stmt* body;
     SymbolTable* blockScope;
 
-  public:
+public:
     ConditionalStmt(Expr* testExpr, Stmt* body);
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class LoopStmt : public ConditionalStmt
 {
-  public:
+public:
     LoopStmt(Expr* testExpr, Stmt* body)
-            : ConditionalStmt(testExpr, body) {}
+    : ConditionalStmt(testExpr, body) {}
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class ForStmt : public LoopStmt
 {
-  protected:
+protected:
     Expr* init,* step;
 
-  public:
+public:
     ForStmt(Expr* init, Expr* test, Expr* step, Stmt* body);
-  	bool BuildTree(SymbolTable* symT);
+    virtual bool BuildTree(SymbolTable* symT);
+    virtual bool Check(SymbolTable* symT);
 };
 
 class WhileStmt : public LoopStmt
 {
-  public:
+public:
     WhileStmt(Expr* test, Stmt* body) : LoopStmt(test, body) {}
-	bool BuildTree(SymbolTable* symT);
+    virtual bool BuildTree(SymbolTable* symT);
+    virtual bool Check(SymbolTable* symT);
 };
 
 class IfStmt : public ConditionalStmt
 {
-  protected:
+protected:
     Stmt* elseBody;
 
-  public:
+public:
     IfStmt(Expr* test, Stmt* thenBody, Stmt* elseBody);
-  	bool BuildTree(SymbolTable* symT);
+    virtual bool BuildTree(SymbolTable* symT);
+    virtual bool Check(SymbolTable* symT);
 };
 
 class BreakStmt : public Stmt
 {
-  public:
+public:
     BreakStmt(yyltype loc) : Stmt(loc) {}
+    virtual bool Check(SymbolTable* symT);
 };
 
 class ReturnStmt : public Stmt
 {
-  protected:
+protected:
     Expr* expr;
 
-  public:
+public:
     ReturnStmt(yyltype loc, Expr* expr);
+    virtual bool Check(SymbolTable* symT);
 };
 
 class PrintStmt : public Stmt
 {
-  protected:
+protected:
     List<Expr*>* args;
 
-  public:
+public:
     PrintStmt(List<Expr*>* arguments);
+    bool isPrintable(Type* type);
+    virtual bool Check(SymbolTable* symT);
 };
 
 
@@ -127,25 +137,25 @@ class IntConstant;
 
 class Case : public Node
 {
-  protected:
+protected:
     IntConstant* value;
     List<Stmt*>* stmts;
     SymbolTable* caseScope;
 
-  public:
+public:
     Case(IntConstant* v, List<Stmt*>* stmts);
-    bool BuildTree(SymbolTable* symT);
+    virtual bool BuildTree(SymbolTable* symT);
 };
 
 class SwitchStmt : public Stmt
 {
-  protected:
+protected:
     Expr* expr;
     List<Case*>* cases;
 
-  public:
+public:
     SwitchStmt(Expr* e, List<Case*>* cases);
-    bool BuildTree(SymbolTable* symT);
+    virtual bool BuildTree(SymbolTable* symT);
 };
 
 #endif

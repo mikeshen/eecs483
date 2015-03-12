@@ -22,13 +22,13 @@ void Program::Check() {
     *       checking itself, which makes for a great use of inheritance
     *       and polymorphism in the node classes.
     */
-    symT = new SymbolTable();
+    programScope = new SymbolTable();
 
     for (int i = 0; i < decls->NumElements(); i++)
-        decls->Nth(i)->BuildTree(symT);
+        decls->Nth(i)->BuildTree(programScope);
 
     for (int i = 0; i < decls->NumElements(); i++)
-        decls->Nth(i)->Check(symT);
+        decls->Nth(i)->Check(programScope);
 }
 
 StmtBlock::StmtBlock(List<VarDecl*>* d, List<Stmt*>* s) {
@@ -37,8 +37,9 @@ StmtBlock::StmtBlock(List<VarDecl*>* d, List<Stmt*>* s) {
     (stmts=s)->SetParentAll(this);
 }
 
-bool StmtBlock::BuildTree(SymbolTable* symT, bool inheritEnv = false) {
-    if (!inheritEnv) blockScope = symT->addScope();
+bool StmtBlock::BuildTree(SymbolTable* symT) {
+
+    blockScope = symT->addScope();
     bool flag = true;
 
     for (int i = 0; i < decls->NumElements(); i++)
@@ -47,7 +48,28 @@ bool StmtBlock::BuildTree(SymbolTable* symT, bool inheritEnv = false) {
     for (int i = 0; i < stmts->NumElements(); i++)
         flag = stmts->Nth(i)->BuildTree(blockScope) ? flag : false;
 
-    return true;
+    return flag;
+}
+
+bool StmtBlock::Check(SymbolTable* symT) {
+    std::cout << "StmtBlock Check reached\n";
+    bool flag = true;
+
+    for (int i = 0; i < decls->NumElements(); i++) {
+        flag = decls->Nth(i)->Check(blockScope) ? flag : false;
+        std::cout << "Declarations number " << i << "\n";
+    }
+
+    for (int i = 0; i < stmts->NumElements(); i++) {
+        // flag = stmts->Nth(i)->Check(blockScope) ? flag : false;
+        Stmt* st = stmts->Nth(i);
+        if(dynamic_cast<AssignExpr*>(st) == 0)
+            std::cout << "Stmt is not an expr\n";
+        st->Check(blockScope);
+        std::cout << "stmt number " << i << "\n";
+    }
+    std::cout << "End of stmtblock reached\n";
+    return flag;
 }
 
 ConditionalStmt::ConditionalStmt(Expr* t, Stmt* b) {
@@ -68,6 +90,39 @@ bool ForStmt::BuildTree(SymbolTable* symT) {
     return body->BuildTree(blockScope);
 }
 
+bool ForStmt::Check(SymbolTable* symT) {
+    std::cout << "ForStmt check reached\n";
+    bool flag = test->Check(symT);
+
+    if (!test->getEvalType()->isConvertableTo(Type::boolType)) {
+        ReportError::TestNotBoolean(test);
+        flag = false;
+    }
+
+    flag = init->Check(symT) ? flag : false;
+    flag = step->Check(symT) ? flag : false;
+    flag = body->Check(blockScope) ? flag : false;
+    return flag;
+}
+
+bool WhileStmt::BuildTree(SymbolTable* symT) {
+    blockScope = symT->addScope();
+
+    blockScope->setLastNode(this);
+    return body->BuildTree(blockScope);
+}
+
+bool WhileStmt::Check(SymbolTable* symT) {
+    std::cout << "WhileStmt check reached\n";
+    bool flag = test->Check(symT);
+    if (!test->getEvalType()->isConvertableTo(Type::boolType)) {
+      ReportError::TestNotBoolean(test);
+      flag = false;
+    }
+    flag = body->Check(blockScope) ? flag : false;
+    return flag;
+}
+
 IfStmt::IfStmt(Expr* t, Stmt* tb, Stmt* eb): ConditionalStmt(t, tb) {
     Assert(t != NULL && tb != NULL); // else can be NULL
     elseBody = eb;
@@ -82,14 +137,65 @@ bool IfStmt::BuildTree(SymbolTable* symT) {
     return flag;
 }
 
+bool IfStmt::Check(SymbolTable* symT) {
+    std::cout << "IfStmt check reached\n";
+    bool flag = test->Check(symT);
+    if (!test->getEvalType()->isConvertableTo(Type::boolType)) {
+      ReportError::TestNotBoolean(test);
+      flag = false;
+    }
+    flag = body->Check(symT) ? flag : false;
+    if (elseBody)
+      flag = elseBody->Check(symT) ? flag : false;
+    return flag;
+}
+
+bool BreakStmt::Check(SymbolTable* symT) {
+    std::cout << "BreakStmt check reached\n";
+    if (symT->getLastNode() == NULL) {
+      ReportError::BreakOutsideLoop(this);
+      return false;
+    }
+    return true;
+}
+
 ReturnStmt::ReturnStmt(yyltype loc, Expr* e) : Stmt(loc) {
     Assert(e != NULL);
     (expr=e)->SetParent(this);
 }
 
+bool ReturnStmt::Check(SymbolTable* symT) {
+    std::cout << "ReturnStmt check reached\n";
+    bool flag = expr->Check(symT);
+    FnDecl* fn = dynamic_cast<FnDecl*>(symT->getOwnerNode());
+    if (!expr->getEvalType()->isConvertableTo(fn->GetReturnType())) {
+        ReportError::ReturnMismatch(this, expr->getEvalType(), fn->GetReturnType());
+        return false;
+    }
+    return flag;
+}
+
 PrintStmt::PrintStmt(List<Expr*>* a) {
     Assert(a != NULL);
     (args=a)->SetParentAll(this);
+}
+
+bool PrintStmt::isPrintable(Type *type) {
+  return (type->isConvertableTo(Type::intType) || type->isConvertableTo(Type::boolType) || type->isConvertableTo(Type::stringType));
+}
+
+bool PrintStmt::Check(SymbolTable* symT) {
+    std::cout << "PrintStmt check reached\n";
+    bool flag = true;
+    for (int i = 0; i < args->NumElements(); i++) {
+      flag = args->Nth(i)->Check(symT) ? flag : false;
+      Type* argType = args->Nth(i)->getEvalType();
+      if (!isPrintable(argType)) {
+        ReportError::PrintArgMismatch(args->Nth(i), i+1, argType);
+        return false;
+      }
+    }
+    return flag;
 }
 
 Case::Case(IntConstant* v, List<Stmt*>* s) {
@@ -99,6 +205,7 @@ Case::Case(IntConstant* v, List<Stmt*>* s) {
     (stmts=s)->SetParentAll(this);
 }
 
+// deprecated
 bool Case::BuildTree(SymbolTable* symT) {
     caseScope = symT->addScope();
     bool flag = true;
@@ -116,17 +223,11 @@ SwitchStmt::SwitchStmt(Expr* e, List<Case*>* c) {
     (cases=c)->SetParentAll(this);
 }
 
+// deprecated
 bool SwitchStmt::BuildTree(SymbolTable* symT) {
     bool flag = true;
     for (int i = 0; i < cases->NumElements(); i++)
         flag = cases->Nth(i)->BuildTree(symT) ? flag : false;
 
     return flag;
-}
-
-bool WhileStmt::BuildTree(SymbolTable* symT) {
-    blockScope = symT->addScope();
-
-    blockScope->setLastNode(this);
-    return body->BuildTree(blockScope);
 }

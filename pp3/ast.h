@@ -36,13 +36,13 @@
 #include "list.h"
 #include <iostream>
 
-class Node
-{
-  protected:
+ class Node
+ {
+ protected:
     yyltype* location;
     Node* parent;
 
-  public:
+public:
     Node(yyltype loc);
     Node();
 
@@ -55,11 +55,11 @@ class Node
 
 class Identifier : public Node
 {
-  protected:
-    char *name;
-  public:
-    Identifier(yyltype loc, const char *name);
-    friend std::ostream& operator<<(std::ostream& out, Identifier *id) { return out << id->name; }
+protected:
+    char* name;
+public:
+    Identifier(yyltype loc, const char* name);
+    friend std::ostream& operator<<(std::ostream& out, Identifier* id) { return out << id->name; }
     virtual bool Check(SymbolTable* symT);
     virtual bool Check(SymbolTable* symT, E_Type type);
     char* getName() { return name; }
@@ -73,7 +73,7 @@ class Identifier : public Node
 // when your parser can continue after an error.
 class Error : public Node
 {
-  public:
+public:
     Error() : Node() {}
     virtual bool Check(SymbolTable* symT) { return true; }
 };

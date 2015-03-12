@@ -20,22 +20,22 @@
 class Type : public Node
 {
   protected:
-	char *typeName;
+	char* typeName;
 
   public :
-	static Type *intType, *doubleType, *boolType, *voidType,
-				*nullType, *stringType, *errorType;
+	static Type* intType,* doubleType,* boolType,* voidType,
+				*nullType,* stringType,* errorType;
 
 	Type(yyltype loc) : Node(loc) {}
-	Type(const char *str);
+	Type(const char* str);
 
 	virtual void PrintToStream(std::ostream& out) { out << typeName; }
-	friend std::ostream& operator<<(std::ostream& out, Type *t) { t->PrintToStream(out); return out; }
-	virtual bool IsEquivalentTo(Type *inputType) { return this == inputType; }
-	virtual bool Check(SymbolTable* symT) { return true; }
+	friend std::ostream& operator<<(std::ostream& out, Type* t) { t->PrintToStream(out); return out; }
+	virtual bool IsEquivalentTo(Type* inputType) { return this == inputType; }
+	virtual bool Check(SymbolTable* symT) { std::cout << "Type Check reached"<<std::endl;return true; }
 	virtual bool isBuiltIn() { return true; }
-	virtual bool isEquivalentTo(Type *inputType) { return this == inputType; }
-	virtual bool isConvertableTo(Type *inputType) {
+	virtual bool isEquivalentTo(Type* inputType) { return this == inputType; }
+	virtual bool isConvertableTo(Type* inputType) {
 		if (this == inputType || this == errorType)
 			return true;
 		return !inputType->isBuiltIn() && this == nullType;
@@ -48,27 +48,27 @@ class Type : public Node
 class NamedType : public Type
 {
   protected:
-	Identifier *id;
+	Identifier* id;
 
   public:
-	NamedType(Identifier *i);
+	NamedType(Identifier* i);
 	virtual bool Check(SymbolTable* symT) { return symT->find(id->getName()) != NULL; }
 	void PrintToStream(std::ostream& out) { out << id; }
 
 	char* getName() { return id->getName();}
 	Identifier* getIdentifier(){ return id; }
 	bool isBuiltIn() { return false; }
-	bool isEquivalentTo(Type *inputType);
-	bool isConvertableTo(Type *inputType);
+	bool isEquivalentTo(Type* inputType);
+	bool isConvertableTo(Type* inputType);
 };
 
 class ArrayType : public Type
 {
   protected:
-	Type *elemType;
+	Type* elemType;
 
   public:
-	ArrayType(yyltype loc, Type *elemType);
+	ArrayType(yyltype loc, Type* elemType);
 	virtual bool Check(SymbolTable* symT) { return elemType->Check(symT); }
 	void PrintToStream(std::ostream& out) { out << elemType << "[]"; }
 	bool isBuiltIn() { return false; }
