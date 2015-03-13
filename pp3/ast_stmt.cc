@@ -52,23 +52,18 @@ bool StmtBlock::BuildTree(SymbolTable* symT) {
 }
 
 bool StmtBlock::Check(SymbolTable* symT) {
-    std::cout << "StmtBlock Check reached\n";
     bool flag = true;
 
     for (int i = 0; i < decls->NumElements(); i++) {
         flag = decls->Nth(i)->Check(blockScope) ? flag : false;
-        std::cout << "Declarations number " << i << "\n";
     }
 
     for (int i = 0; i < stmts->NumElements(); i++) {
         // flag = stmts->Nth(i)->Check(blockScope) ? flag : false;
         Stmt* st = stmts->Nth(i);
         if(dynamic_cast<AssignExpr*>(st) == 0)
-            std::cout << "Stmt is not an expr\n";
         st->Check(blockScope);
-        std::cout << "stmt number " << i << "\n";
     }
-    std::cout << "End of stmtblock reached\n";
     return flag;
 }
 
@@ -91,7 +86,6 @@ bool ForStmt::BuildTree(SymbolTable* symT) {
 }
 
 bool ForStmt::Check(SymbolTable* symT) {
-    std::cout << "ForStmt check reached\n";
     bool flag = test->Check(symT);
 
     if (!test->getEvalType()->isConvertableTo(Type::boolType)) {
@@ -113,7 +107,6 @@ bool WhileStmt::BuildTree(SymbolTable* symT) {
 }
 
 bool WhileStmt::Check(SymbolTable* symT) {
-    std::cout << "WhileStmt check reached\n";
     bool flag = test->Check(symT);
     if (!test->getEvalType()->isConvertableTo(Type::boolType)) {
       ReportError::TestNotBoolean(test);
@@ -138,7 +131,6 @@ bool IfStmt::BuildTree(SymbolTable* symT) {
 }
 
 bool IfStmt::Check(SymbolTable* symT) {
-    std::cout << "IfStmt check reached\n";
     bool flag = test->Check(symT);
     if (!test->getEvalType()->isConvertableTo(Type::boolType)) {
       ReportError::TestNotBoolean(test);
@@ -151,7 +143,6 @@ bool IfStmt::Check(SymbolTable* symT) {
 }
 
 bool BreakStmt::Check(SymbolTable* symT) {
-    std::cout << "BreakStmt check reached\n";
     if (symT->getLastNode() == NULL) {
       ReportError::BreakOutsideLoop(this);
       return false;
@@ -165,7 +156,6 @@ ReturnStmt::ReturnStmt(yyltype loc, Expr* e) : Stmt(loc) {
 }
 
 bool ReturnStmt::Check(SymbolTable* symT) {
-    std::cout << "ReturnStmt check reached\n";
     bool flag = expr->Check(symT);
     FnDecl* fn = dynamic_cast<FnDecl*>(symT->getOwnerNode());
     if (!expr->getEvalType()->isConvertableTo(fn->GetReturnType())) {
@@ -185,7 +175,6 @@ bool PrintStmt::isPrintable(Type *type) {
 }
 
 bool PrintStmt::Check(SymbolTable* symT) {
-    std::cout << "PrintStmt check reached\n";
     bool flag = true;
     for (int i = 0; i < args->NumElements(); i++) {
       flag = args->Nth(i)->Check(symT) ? flag : false;

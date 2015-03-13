@@ -16,6 +16,7 @@
 #include "ast.h"
 #include "ast_stmt.h"
 #include "list.h"
+#include "ast_decl.h"
 
 class NamedType; // for new
 class Type; // for NewArray
@@ -26,12 +27,12 @@ class Expr : public Stmt
 public:
     Expr(yyltype loc) : Stmt(loc) {}
     Expr() : Stmt() {}
-    virtual bool Check(SymbolTable* symT) { std::cout << "expr check reached\n"; return true; }
+    virtual bool Check(SymbolTable* symT) { return true; }
     void setEvalType(Type* eType) { evaluatedType = eType; }
     Type* getEvalType() { return evaluatedType; }
 
 protected:
-	Type* evaluatedType;
+    Type* evaluatedType;
 };
 
 /* This node type is used for those places where an expression is optional.
@@ -41,7 +42,7 @@ protected:
  {
  public:
     EmptyExpr();
-    virtual bool Check(SymbolTable* symT) { std::cout << "empty expr check reached\n"; return true; }
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class IntConstant : public Expr
@@ -51,7 +52,7 @@ protected:
 
 public:
     IntConstant(yyltype loc, int val);
-    virtual bool Check(SymbolTable* symT) { std::cout << "IntConstant check reached\n";return true; }
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class DoubleConstant : public Expr
@@ -61,7 +62,7 @@ protected:
 
 public:
     DoubleConstant(yyltype loc, double val);
-    virtual bool Check(SymbolTable* symT) { std::cout << "DoubleConstant check reached\n"; return true; }
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class BoolConstant : public Expr
@@ -71,7 +72,7 @@ protected:
 
 public:
     BoolConstant(yyltype loc, bool val);
-    virtual bool Check(SymbolTable* symT) { std::cout << "BoolConstant reached\n"; return true; }
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class StringConstant : public Expr
@@ -81,14 +82,14 @@ protected:
 
 public:
     StringConstant(yyltype loc, const char* val);
-    virtual bool Check(SymbolTable* symT) { std::cout << "StringConstant check reached\n"; return true; }
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class NullConstant: public Expr
 {
 public:
     NullConstant(yyltype loc);
-    virtual bool Check(SymbolTable* symT) { std::cout << "NullConstant check reached\n"; return true; }
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class Operator : public Node
@@ -99,20 +100,19 @@ protected:
 public:
     Operator(yyltype loc, const char* tok);
     friend std::ostream& operator<<(std::ostream& out, Operator* o) { return out << o->tokenString; }
-    virtual bool Check(SymbolTable* symT) { std::cout << "Operator check reached\n"; return true; }
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class CompoundExpr : public Expr
 {
 protected:
-    int test;
     Operator* op;
     Expr* left,* right; // left will be NULL if unary
 
 public:
-    CompoundExpr(Expr* lhs, Operator* op, Expr* rhs);  // for binary
+    CompoundExpr(Expr* lhs, Operator* op, Expr* rhs); // for binary
     CompoundExpr(Operator* op, Expr* rhs);             // for unary
-    virtual bool Check(SymbolTable* symT) { std::cout << "CompoundExpr check reached\n"; return true; }
+    virtual bool Check(SymbolTable* symT) {return true; }
 };
 
 class ArithmeticExpr : public CompoundExpr
@@ -120,21 +120,21 @@ class ArithmeticExpr : public CompoundExpr
 public:
     ArithmeticExpr(Expr* lhs, Operator* op, Expr* rhs) : CompoundExpr(lhs,op,rhs) {}
     ArithmeticExpr(Operator* op, Expr* rhs) : CompoundExpr(op,rhs) {}
-    virtual bool Check(SymbolTable* symT);
+    bool Check(SymbolTable* symT);
 };
 
 class RelationalExpr : public CompoundExpr
 {
 public:
     RelationalExpr(Expr* lhs, Operator* op, Expr* rhs) : CompoundExpr(lhs,op,rhs) {}
-    virtual bool Check(SymbolTable* symT);
+    bool Check(SymbolTable* symT);
 };
 
 class EqualityExpr : public CompoundExpr
 {
 public:
     EqualityExpr(Expr* lhs, Operator* op, Expr* rhs) : CompoundExpr(lhs,op,rhs) {}
-    virtual bool Check(SymbolTable* symT);
+    bool Check(SymbolTable* symT);
 };
 
 class LogicalExpr : public CompoundExpr
@@ -142,28 +142,27 @@ class LogicalExpr : public CompoundExpr
 public:
     LogicalExpr(Expr* lhs, Operator* op, Expr* rhs) : CompoundExpr(lhs,op,rhs) {}
     LogicalExpr(Operator* op, Expr* rhs) : CompoundExpr(op,rhs) {}
-    virtual bool Check(SymbolTable* symT);
+    bool Check(SymbolTable* symT);
 };
 
 class AssignExpr : public CompoundExpr
 {
 public:
     AssignExpr(Expr* lhs, Operator* op, Expr* rhs) : CompoundExpr(lhs,op,rhs) {}
-    virtual bool Check(SymbolTable* symT);
+    bool Check(SymbolTable* symT);
 };
 
 class LValue : public Expr
 {
 public:
     LValue(yyltype loc) : Expr(loc) {}
-    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class This : public Expr
 {
 public:
     This(yyltype loc) : Expr(loc) {}
-    virtual bool Check(SymbolTable* symT);
+    bool Check(SymbolTable* symT);
 };
 
 class ArrayAccess : public LValue
@@ -173,7 +172,7 @@ protected:
 
 public:
     ArrayAccess(yyltype loc, Expr* base, Expr* subscript);
-    virtual bool Check(SymbolTable* symT);
+    bool Check(SymbolTable* symT);
 };
 
 /* Note that field access is used both for qualified names
@@ -184,12 +183,12 @@ public:
  class FieldAccess : public LValue
  {
  protected:
-    Expr* base;	// will be NULL if no explicit base
+    Expr* base; // will be NULL if no explicit base
     Identifier* field;
 
 public:
     FieldAccess(Expr* base, Identifier* field); //ok to pass NULL base
-    virtual bool Check(SymbolTable* symT);
+    bool Check(SymbolTable* symT);
     bool CheckBase(SymbolTable* symT);
 };
 
@@ -200,13 +199,15 @@ public:
  class Call : public Expr
  {
  protected:
-    Expr* base;	// will be NULL if no explicit base
+    Expr *base; // will be NULL if no explicit base
     Identifier* field;
     List<Expr*>* actuals;
 
 public:
     Call(yyltype loc, Expr* base, Identifier* field, List<Expr*>* args);
-    // virtual bool Check(SymbolTable* symT);
+    bool CheckBase(SymbolTable* symT);
+    bool CheckCall(SymbolTable* symT, Symbol* sym);
+    bool Check(SymbolTable* symT);
 };
 
 class NewExpr : public Expr
@@ -216,7 +217,7 @@ protected:
 
 public:
     NewExpr(yyltype loc, NamedType* clsType);
-    // virtual bool Check(SymbolTable* symT);
+    bool Check(SymbolTable* symT);
 };
 
 class NewArrayExpr : public Expr
@@ -227,21 +228,19 @@ protected:
 
 public:
     NewArrayExpr(yyltype loc, Expr* sizeExpr, Type* elemType);
-    // virtual bool Check(SymbolTable* symT);
+    bool Check(SymbolTable* symT);
 };
 
 class ReadIntegerExpr : public Expr
 {
 public:
-    ReadIntegerExpr(yyltype loc) : Expr(loc) {}
-    // virtual bool Check(SymbolTable* symT);
+    ReadIntegerExpr(yyltype loc);
 };
 
 class ReadLineExpr : public Expr
 {
 public:
-    ReadLineExpr(yyltype loc) : Expr (loc) {}
-    // virtual bool Check(SymbolTable* symT);
+    ReadLineExpr(yyltype loc);
 };
 
 class PostfixExpr : public Expr
@@ -251,7 +250,6 @@ protected:
     Operator* op;
 public:
     PostfixExpr(LValue* lv, Operator* op);
-    // virtual bool Check(SymbolTable* symT);
 };
 
 

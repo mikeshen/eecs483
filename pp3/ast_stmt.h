@@ -37,7 +37,7 @@ public:
     Stmt() : Node() {}
     Stmt(yyltype loc) : Node(loc) {}
     virtual bool BuildTree(SymbolTable* symT) { return true; }
-    virtual bool Check(SymbolTable* symT) { std::cout << "Stmt check reached\n"; return true; }
+    virtual bool Check(SymbolTable* symT) { return true; }
 };
 
 class StmtBlock : public Stmt

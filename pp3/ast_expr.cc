@@ -8,23 +8,27 @@
 #include <string.h>
 #include "errors.h"
 
+
 EmptyExpr::EmptyExpr() {
     evaluatedType = Type::voidType;
 }
 
-IntConstant::IntConstant(yyltype loc, int val) : Expr(loc), value(val) {
+IntConstant::IntConstant(yyltype loc, int val) : Expr(loc) {
+    value = val;
     evaluatedType = Type::intType;
-    }
+}
 
-DoubleConstant::DoubleConstant(yyltype loc, double val) : Expr(loc), value(val) {
+DoubleConstant::DoubleConstant(yyltype loc, double val) : Expr(loc) {
+    value = val;
     evaluatedType = Type::doubleType;
-    }
+}
 
-BoolConstant::BoolConstant(yyltype loc, bool val) : Expr(loc), value(val) {
+BoolConstant::BoolConstant(yyltype loc, bool val) : Expr(loc) {
+    value = val;
     evaluatedType = Type::boolType;
-    }
+}
 
-StringConstant::StringConstant(yyltype loc, const char* val) : Expr(loc) {
+StringConstant::StringConstant(yyltype loc, const char *val) : Expr(loc) {
     Assert(val != NULL);
     value = strdup(val);
     evaluatedType = Type::stringType;
@@ -32,14 +36,13 @@ StringConstant::StringConstant(yyltype loc, const char* val) : Expr(loc) {
 
 NullConstant::NullConstant(yyltype loc) : Expr(loc) {
     evaluatedType = Type::nullType;
-    }
+}
 
-Operator::Operator(yyltype loc, const char* tok) : Node(loc) {
+Operator::Operator(yyltype loc, const char *tok) : Node(loc) {
     Assert(tok != NULL);
     strncpy(tokenString, tok, sizeof(tokenString));
 }
-
-CompoundExpr::CompoundExpr(Expr* l, Operator* o, Expr* r)
+CompoundExpr::CompoundExpr(Expr *l, Operator *o, Expr *r)
     : Expr(Join(l->GetLocation(), r->GetLocation())) {
     Assert(l != NULL && o != NULL && r != NULL);
     (op=o)->SetParent(this);
@@ -47,7 +50,7 @@ CompoundExpr::CompoundExpr(Expr* l, Operator* o, Expr* r)
     (right=r)->SetParent(this);
 }
 
-CompoundExpr::CompoundExpr(Operator* o, Expr* r)
+CompoundExpr::CompoundExpr(Operator *o, Expr *r)
     : Expr(Join(o->GetLocation(), r->GetLocation())) {
     Assert(o != NULL && r != NULL);
     left = NULL;
@@ -56,7 +59,6 @@ CompoundExpr::CompoundExpr(Operator* o, Expr* r)
 }
 
 bool ArithmeticExpr::Check(SymbolTable* symT) {
-    std::cout << "ArithmeticExpr check reached" << std::endl;
     bool flag = true;
 
     flag = right->Check(symT) ? flag : false;
@@ -78,7 +80,7 @@ bool ArithmeticExpr::Check(SymbolTable* symT) {
         }
     }
     else {
-        if (rightType->isConvertableTo(Type::intType) || rightType->isConvertableTo(Type::doubleType))
+        if (rightType->isConvertableTo(Type::intType)  || rightType->isConvertableTo(Type::doubleType))
             setEvalType(rightType);
         else {
             flag = false;
@@ -90,8 +92,7 @@ bool ArithmeticExpr::Check(SymbolTable* symT) {
     return flag;
 }
 
-bool RelationalExpr::Check(SymbolTable* symT) {
-    std::cout << "RelationalExpr check reached" << std::endl;
+bool RelationalExpr::Check(SymbolTable *symT) {
     bool flag = left->Check(symT);
     Type* leftType = left->getEvalType();
     flag = right->Check(symT) ? flag : false;
@@ -106,8 +107,7 @@ bool RelationalExpr::Check(SymbolTable* symT) {
     return flag;
 }
 
-bool EqualityExpr::Check(SymbolTable* symT) {
-    std::cout << "EqualityExpr check reached" << std::endl;
+bool EqualityExpr::Check(SymbolTable *symT) {
     bool flag = left->Check(symT);
     Type* leftType = left->getEvalType();
     flag = right->Check(symT) ? flag : false;
@@ -123,15 +123,12 @@ bool EqualityExpr::Check(SymbolTable* symT) {
 }
 
 bool LogicalExpr::Check(SymbolTable* symT) {
-    std::cout << "LogicalExpr check reached" << std::endl;
     bool flag = right->Check(symT);
     Type* rightType = right->getEvalType();
-
 
     if (left) {
         flag = left->Check(symT) ? flag : false;
         Type* leftType = left->getEvalType();
-
 
         if (leftType->isConvertableTo(Type::boolType) && rightType->isConvertableTo(Type::boolType))
             setEvalType(Type::boolType);
@@ -154,12 +151,11 @@ bool LogicalExpr::Check(SymbolTable* symT) {
 }
 
 bool AssignExpr::Check(SymbolTable* symT) {
-    std::cout << "AssignExpr check reached" << std::endl;
     bool flag = left->Check(symT);
     flag = right->Check(symT) ? flag : false;
 
-    Type* leftType = left->getEvalType();
-    Type* rightType = right->getEvalType();
+    Type *leftType = left->getEvalType();
+    Type *rightType = right->getEvalType();
 
     if (leftType->isEquivalentTo(Type::errorType) || rightType->isConvertableTo(leftType))
         setEvalType(leftType);
@@ -173,7 +169,6 @@ bool AssignExpr::Check(SymbolTable* symT) {
 
 
 bool This::Check(SymbolTable* symT) {
-    std::cout << "This check reached" << std::endl;
     Node* node = symT->getThisClass();
     if (node == NULL) {
         ReportError::ThisOutsideClassScope(this);
@@ -188,14 +183,12 @@ bool This::Check(SymbolTable* symT) {
 }
 
 
-ArrayAccess::ArrayAccess(yyltype loc, Expr* b, Expr* s) : LValue(loc) {
+ArrayAccess::ArrayAccess(yyltype loc, Expr *b, Expr *s) : LValue(loc) {
         (base=b)->SetParent(this);
         (subscript=s)->SetParent(this);
 }
 
 bool ArrayAccess::Check(SymbolTable* symT) {
-    std::cout << "ArrayAccess check reached" << std::endl;
-    std::cout << "checked" << std::endl;
     bool flag = true;
     flag = base->Check(symT) ? flag : false;
     flag = subscript->Check(symT) ? flag : false;
@@ -212,62 +205,51 @@ bool ArrayAccess::Check(SymbolTable* symT) {
         ReportError::BracketsOnNonArray(base);
         setEvalType(Type::errorType);
     }
-    else if(getEvalType()->isEquivalentTo(Type::errorType) )
+    else if (getEvalType()->isEquivalentTo(Type::errorType) )
         setEvalType(baseType->getElemType());
 
     return flag;
 }
 
-FieldAccess::FieldAccess(Expr* b, Identifier* f)
-    : LValue(b? Join(b->GetLocation(), f->GetLocation()) :* f->GetLocation()) {
-        Assert(f != NULL); // b can be be NULL (just means no explicit base)
-        base = b;
-        if (base) base->SetParent(this);
-        (field=f)->SetParent(this);
+FieldAccess::FieldAccess(Expr *b, Identifier *f)
+    : LValue(b? Join(b->GetLocation(), f->GetLocation()) : *f->GetLocation()) {
+    Assert(f != NULL); // b can be be NULL (just means no explicit base)
+    base = b;
+    if (base) base->SetParent(this);
+    (field=f)->SetParent(this);
 }
 
 bool FieldAccess::CheckBase(SymbolTable* symT) {
-    NamedType* baseType = dynamic_cast<NamedType*>(base->getEvalType()); //////////////////////////Not sure if this part is correct
+    NamedType* baseType = dynamic_cast<NamedType*>(base->getEvalType());
     if (baseType == 0) {
         ReportError::FieldNotFoundInBase(field, base->getEvalType());
-        setEvalType(Type::errorType);
         return false;
     }
 
     Symbol* element = symT->findClassField(baseType->getName(), field->getName(), VARIABLE);
-    if (element == NULL) {
-        ReportError::FieldNotFoundInBase(field, baseType);
-        setEvalType(Type::errorType);
-        return false;
-    }
-
-
-    Node* currentClass = symT->getThisClass();
-    if (currentClass == NULL) {
-        ReportError::InaccessibleField(field, base->getEvalType());
-        setEvalType(Type::errorType);
-        return false;
-    }
-    ClassDecl* classDecl = static_cast<ClassDecl*>(currentClass);
-    //Assert(classDecl != 0);
-    if (dynamic_cast<This*>(base) != 0) {
-        FieldAccess* baseFieldAccess = static_cast<FieldAccess*>(base);
-        //Assert(baseFieldAccess != 0);
-        if (strcmp(classDecl->getIdentifier()->getName(), base->getEvalType()->getName()) != 0) {
+    if(element != NULL) {
+        Node* currentClass = symT->getThisClass();
+        if (currentClass == NULL) {
             ReportError::InaccessibleField(field, base->getEvalType());
-            setEvalType(Type::errorType);
             return false;
         }
+        if (dynamic_cast<This*>(base) == 0 && strcmp((static_cast<ClassDecl*>(currentClass))->getName(), base->getEvalType()->getName()) != 0) {
+                ReportError::InaccessibleField(field, base->getEvalType());
+                return false;
+        }
     }
-    Decl* fieldDecl = static_cast<Decl*>(element->getNode());
-    //Assert(fieldDecl != 0);
+    else {
+        ReportError::FieldNotFoundInBase(field, baseType);
+        return false;
+    }
+
+    Decl *fieldDecl = static_cast<Decl*>(element->getNode());
     setEvalType(fieldDecl->getType());
 
     return true;
 }
 
 bool FieldAccess::Check(SymbolTable* symT) {
-    std::cout << "Field Access check reached" << std::endl;
     bool flag = true;
     if (base == NULL) {
         Symbol* sym = symT->find(field->getName(), VARIABLE);
@@ -281,34 +263,152 @@ bool FieldAccess::Check(SymbolTable* symT) {
         return true;
     }
     flag = base->Check(symT) ? flag : false;
-    flag = CheckBase(symT) ? flag : false;
+    if (CheckBase(symT) == false) {
+        setEvalType(Type::errorType);
+        return false;
+    }
 
     return flag;
 }
 
 
-Call::Call(yyltype loc, Expr* b, Identifier* f, List<Expr*>* a) : Expr(loc)  {
-    Assert(f != NULL && a != NULL); // b can be be NULL (just means no explicit base)
-    base = b;
-    if (base) base->SetParent(this);
-    (field=f)->SetParent(this);
-    (actuals=a)->SetParentAll(this);
+Call::Call(yyltype loc, Expr *b, Identifier *f, List<Expr*> *a) : Expr(loc)  {
+        Assert(f != NULL && a != NULL); // b can be be NULL (just means no explicit base)
+        base = b;
+        if (base) base->SetParent(this);
+        (field=f)->SetParent(this);
+        (actuals=a)->SetParentAll(this);
 }
 
 
-NewExpr::NewExpr(yyltype loc, NamedType* c) : Expr(loc) {
-Assert(c != NULL);
-(cType=c)->SetParent(this);
+bool Call::CheckCall(SymbolTable *symT, Symbol* sym) {
+    FnDecl* FuncProto = dynamic_cast<FnDecl*>(sym->getNode());
+    setEvalType(FuncProto->GetReturnType());
+    List<VarDecl*> *formals = FuncProto->GetFormals();
+    bool flag = true;
+    if (formals->NumElements() != actuals->NumElements()) {
+        ReportError::NumArgsMismatch(field, formals->NumElements(), actuals->NumElements());
+        return false;
+    }
+    Type *formalType, *actualType;
+    for (int i = 0; i < formals->NumElements(); ++i) {
+        formalType = formals->Nth(i)->getType();
+        actualType = actuals->Nth(i)->getEvalType();
+        if (!actualType->isConvertableTo(formalType)) {
+            ReportError::ArgMismatch(actuals->Nth(i), i+1, actualType, formalType);
+            flag = false;
+        }
+    }
+
+    return flag;
+}
+
+bool Call::CheckBase(SymbolTable *symT) {
+    bool flag = base->Check(symT);
+
+    Type* basetype = base->getEvalType();
+    if (basetype == Type::errorType) {
+        setEvalType(Type::errorType);
+        return false;
+    }
+    if (dynamic_cast<ArrayType*>(base) != 0 && strcmp(field->getName(), "length") == 0) {
+        setEvalType(Type::intType);
+        return flag;
+    }
+    Symbol* sym = symT->findClassField(basetype->getName(), field->getName(), FUNCTION);
+    if (sym == NULL) {
+        ReportError::FieldNotFoundInBase(field, basetype);
+        setEvalType(Type::errorType);
+        return false;
+    }
+    flag = CheckCall(symT, sym) ? flag : false;
+    return flag;
+}
+
+bool Call::Check(SymbolTable *symT) {
+    bool flag = true;
+    for (int i = 0; i < actuals->NumElements(); ++i) {
+        flag = actuals->Nth(i)->Check(symT) ? flag : false;
+    }
+
+    if (base == NULL) {
+        Symbol *sym = symT->find(field->getName(), FUNCTION);
+        if (sym == NULL) {
+            ReportError::IdentifierNotDeclared(field, LookingForFunction);
+            setEvalType(Type::errorType);
+            return false;
+        }
+        flag = CheckCall(symT, sym) ? flag : false;
+        return flag;
+    }
+
+    flag = CheckBase(symT) ? flag : false;
+
+
+    return flag;
 }
 
 
-NewArrayExpr::NewArrayExpr(yyltype loc, Expr* sz, Type* et) : Expr(loc) {
+
+NewExpr::NewExpr(yyltype loc, NamedType *c) : Expr(loc) {
+    Assert(c != NULL);
+    (cType=c)->SetParent(this);
+}
+
+
+bool NewExpr::Check(SymbolTable* symT) {
+    if (symT->find(cType->getName(), CLASS) != NULL) {
+        setEvalType(cType);
+        return true;
+    }
+    else {
+        ReportError::IdentifierNotDeclared(cType->getIdentifier(), LookingForClass);
+        setEvalType(Type::errorType);
+        return false;
+    }
+}
+
+
+NewArrayExpr::NewArrayExpr(yyltype loc, Expr *sz, Type *et) : Expr(loc) {
     Assert(sz != NULL && et != NULL);
     (size=sz)->SetParent(this);
     (elemType=et)->SetParent(this);
 }
 
-PostfixExpr::PostfixExpr(LValue* lv, Operator* o) : Expr(Join(lv->GetLocation(), o->GetLocation())) {
+bool NewArrayExpr::Check(SymbolTable* symT) {
+    bool flag = size->Check(symT);
+    flag = elemType->Check(symT) ? flag : false;
+
+
+    if (elemType->getIdentifier() == NULL)
+        setEvalType(new ArrayType(*location, elemType));
+    else
+        ReportError::IdentifierNotDeclared(elemType->getIdentifier(), LookingForType);
+
+
+    if (!size->getEvalType()->isConvertableTo(Type::intType)) {
+        flag = false;
+        ReportError::NewArraySizeNotInteger(size);
+        setEvalType(Type::errorType);
+    }
+
+    if (flag == false)////////////////////////////////////////////////////////////////////Might want to add this to all functions
+        setEvalType(Type::errorType);
+
+    return flag;
+}
+
+
+
+ReadIntegerExpr::ReadIntegerExpr(yyltype loc) : Expr(loc) {
+    setEvalType(Type::intType);
+}
+
+ReadLineExpr::ReadLineExpr(yyltype loc) : Expr (loc) {
+    setEvalType(Type::stringType);
+}
+
+PostfixExpr::PostfixExpr(LValue *lv, Operator *o) : Expr(Join(lv->GetLocation(), o->GetLocation())) {
     Assert(lv != NULL && o != NULL);
     (lvalue=lv)->SetParent(this);
     (op=o)->SetParent(this);

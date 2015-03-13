@@ -17,30 +17,31 @@
 #include "ast_type.h"
 #include "list.h"
 
-class Identifier;
-class Stmt;
+ class Identifier;
+ class Stmt;
+ class FnCheckles;
 
-class Decl : public Node
-{
-  protected:
+ class Decl : public Node
+ {
+ protected:
     Identifier* id;
 
-  public:
+public:
     Decl(Identifier* name);
     friend std::ostream& operator<<(std::ostream& out, Decl* d) { return out << d->id; }
     virtual bool BuildTree(SymbolTable* symT) { return true; }
     virtual bool Check(SymbolTable* symT) { return true; }
-    virtual Type* getType() { return NULL; }
+    virtual Type* getType() { return nullptr; }
     char* getName() { return id->getName(); }
     Identifier* getIdentifier() { return id; }
 };
 
 class VarDecl : public Decl
 {
-  protected:
+protected:
     Type* type;
 
-  public:
+public:
     VarDecl(Identifier* name, Type* type);
     virtual bool BuildTree(SymbolTable* symT);
     virtual bool Check(SymbolTable* symT);
@@ -49,27 +50,30 @@ class VarDecl : public Decl
 
 class ClassDecl : public Decl
 {
-  protected:
+protected:
     List<Decl*>* members;
     NamedType* extends;
     List<NamedType*>* implements;
     SymbolTable* classScope;
+    Hashtable<FnCheckles*>* funcCheckles;
 
-  public:
+public:
     ClassDecl(Identifier* name, NamedType* extends,
-              List<NamedType*>* implements, List<Decl*>* members);
+    List<NamedType*>* implements, List<Decl*>* members);
     bool ImplementsInterface(char* name);
     virtual bool BuildTree(SymbolTable* symT);
     virtual bool Check(SymbolTable* symT);
+    bool CheckAgainstParents(SymbolTable* symT);
+    bool CheckAgainstInterfaces(SymbolTable* symT);
 };
 
 class InterfaceDecl : public Decl
 {
-  protected:
+protected:
     List<Decl*>* members;
     SymbolTable* interfaceScope;
 
-  public:
+public:
     InterfaceDecl(Identifier* name, List<Decl*>* members);
     virtual bool BuildTree(SymbolTable* symT);
     virtual bool Check(SymbolTable* symT);
@@ -77,13 +81,13 @@ class InterfaceDecl : public Decl
 
 class FnDecl : public Decl
 {
-  protected:
+protected:
     List<VarDecl*>* formals;
     Type* returnType;
     Stmt* body;
     SymbolTable* fnScope;
 
-  public:
+public:
     FnDecl(Identifier* name, Type* returnType, List<VarDecl*>* formals);
     void SetFunctionBody(Stmt* b);
     virtual bool BuildTree(SymbolTable* symT);
@@ -91,6 +95,26 @@ class FnDecl : public Decl
     Type* GetReturnType() { return returnType; }
     Type* GetType() { return returnType; }
     List<VarDecl*>* GetFormals() { return formals; }
+    bool isValidFn(FnDecl* fn);
+};
+
+
+class FnCheckles {
+public:
+    FnCheckles(FnDecl* p, NamedType* type) {
+        prototype = p;
+        intf_type = type;
+        implemented = false;
+    }
+    FnDecl* getPrototype() { return prototype; }
+    NamedType* getIntfType() { return intf_type; }
+    bool isImplemented() { return implemented; }
+    void setImplemented(bool implemented) { implemented = implemented; }
+
+protected:
+    FnDecl* prototype;
+    NamedType* intf_type;
+    bool implemented;
 };
 
 #endif
