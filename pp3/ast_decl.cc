@@ -76,9 +76,9 @@ bool ClassDecl::ImplementsInterface(char *name) {
 
 bool ClassDecl::CheckAgainstParents(SymbolTable *symT) {
     bool flag = true;
-    Symbol *s = symT->find(extends->getName());
+    Symbol *s = NULL;
     // Check that parent exists
-    if (extends && s == NULL) {
+    if (extends && (s = symT->find(extends->getName())) != NULL) {
         ReportError::IdentifierNotDeclared(extends->getIdentifier(), LookingForClass);
         flag = false;
     }

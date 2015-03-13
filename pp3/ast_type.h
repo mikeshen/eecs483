@@ -32,7 +32,7 @@ class Type : public Node
 	virtual void PrintToStream(std::ostream& out) { out << typeName; }
 	friend std::ostream& operator<<(std::ostream& out, Type* t) { t->PrintToStream(out); return out; }
 	virtual bool IsEquivalentTo(Type* inputType) { return this == inputType; }
-	virtual bool Check(SymbolTable* symT) { std::cout << "Type Check reached"<<std::endl;return true; }
+	virtual bool Check(SymbolTable* symT) { return true; }
 	virtual bool isBuiltIn() { return true; }
 	virtual bool isEquivalentTo(Type* inputType) { return this == inputType; }
 	virtual bool isConvertableTo(Type* inputType) {

@@ -61,7 +61,6 @@ bool StmtBlock::Check(SymbolTable* symT) {
     for (int i = 0; i < stmts->NumElements(); i++) {
         // flag = stmts->Nth(i)->Check(blockScope) ? flag : false;
         Stmt* st = stmts->Nth(i);
-        if(dynamic_cast<AssignExpr*>(st) == 0)
         st->Check(blockScope);
     }
     return flag;
