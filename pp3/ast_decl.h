@@ -19,7 +19,7 @@
 
  class Identifier;
  class Stmt;
- class FnCheckles;
+ class ImplementedFunction;
 
  class Decl : public Node
  {
@@ -31,7 +31,7 @@ public:
     friend std::ostream& operator<<(std::ostream& out, Decl* d) { return out << d->id; }
     virtual bool BuildTree(SymbolTable* symT) { return true; }
     virtual bool Check(SymbolTable* symT) { return true; }
-    virtual Type* getType() { return nullptr; }
+    virtual Type* getType() { return NULL; }
     char* getName() { return id->getName(); }
     Identifier* getIdentifier() { return id; }
 };
@@ -51,11 +51,12 @@ public:
 class ClassDecl : public Decl
 {
 protected:
-    List<Decl*>* members;
     NamedType* extends;
     List<NamedType*>* implements;
     SymbolTable* classScope;
-    Hashtable<FnCheckles*>* funcCheckles;
+    Hashtable<ImplementedFunction*>* implmentedFunctions;
+    ClassDecl* parent;
+    List<Decl*>* members;
 
 public:
     ClassDecl(Identifier* name, NamedType* extends,
@@ -65,6 +66,7 @@ public:
     virtual bool Check(SymbolTable* symT);
     bool CheckAgainstParents(SymbolTable* symT);
     bool CheckAgainstInterfaces(SymbolTable* symT);
+    bool Inherit(SymbolTable* symT);
 };
 
 class InterfaceDecl : public Decl
@@ -77,6 +79,7 @@ public:
     InterfaceDecl(Identifier* name, List<Decl*>* members);
     virtual bool BuildTree(SymbolTable* symT);
     virtual bool Check(SymbolTable* symT);
+    List<Decl*>* getMembers() { return members; }
 };
 
 class FnDecl : public Decl
@@ -99,9 +102,9 @@ public:
 };
 
 
-class FnCheckles {
+class ImplementedFunction {
 public:
-    FnCheckles(FnDecl* p, NamedType* type) {
+    ImplementedFunction(FnDecl* p, NamedType* type) {
         prototype = p;
         intf_type = type;
         implemented = false;

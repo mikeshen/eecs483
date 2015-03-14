@@ -36,7 +36,7 @@ bool NamedType::isConvertableTo(Type* inputType) {
 
     if (inputType->isBuiltIn())
         return false;
-    else if (IsEquivalentTo(inputType))
+    else if (dynamic_cast<NamedType*>(inputType) != 0 && strcmp(id->getName(), dynamic_cast<NamedType*>(inputType)->getName()) == 0)
         return true;
     else if (sym == NULL)
         return false;

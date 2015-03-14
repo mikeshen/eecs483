@@ -97,7 +97,13 @@ bool RelationalExpr::Check(SymbolTable *symT) {
     Type* leftType = left->getEvalType();
     flag = right->Check(symT) ? flag : false;
     Type* rightType = right->getEvalType();
-    if (leftType->isConvertableTo(rightType) && (rightType->isConvertableTo(Type::intType) || rightType->isConvertableTo(Type::doubleType))  ) ////May or may not be incorrect
+    if (leftType->isConvertableTo(rightType) && (rightType->isConvertableTo(Type::intType) || rightType->isConvertableTo(Type::doubleType))  )
+        setEvalType(Type::boolType);
+    else if (leftType->isConvertableTo(Type::errorType) && (rightType->isConvertableTo(Type::intType) || rightType->isConvertableTo(Type::doubleType))  )
+        setEvalType(Type::boolType);
+    else if (rightType->isConvertableTo(Type::errorType) && (leftType->isConvertableTo(Type::intType) || leftType->isConvertableTo(Type::doubleType))  )
+        setEvalType(Type::boolType);
+    else if ( rightType->isConvertableTo(Type::errorType) && leftType->isConvertableTo(Type::errorType)  )
         setEvalType(Type::boolType);
     else {
         flag = false;
@@ -157,7 +163,7 @@ bool AssignExpr::Check(SymbolTable* symT) {
     Type *leftType = left->getEvalType();
     Type *rightType = right->getEvalType();
 
-    if (leftType->isEquivalentTo(Type::errorType) || rightType->isConvertableTo(leftType))
+    if (rightType->isConvertableTo(leftType) || leftType->isEquivalentTo(Type::errorType))
         setEvalType(leftType);
     else {
         flag = false;
@@ -193,20 +199,20 @@ bool ArrayAccess::Check(SymbolTable* symT) {
     flag = base->Check(symT) ? flag : false;
     flag = subscript->Check(symT) ? flag : false;
 
-    if (!(subscript->getEvalType()->isConvertableTo(Type::intType))  ) {
-        flag = false;
-        ReportError::SubscriptNotInteger(subscript);
-        setEvalType(Type::errorType);
-    }
-
     ArrayType* baseType = dynamic_cast<ArrayType*>(base->getEvalType());
     if (baseType == 0) {
         flag = false;
         ReportError::BracketsOnNonArray(base);
         setEvalType(Type::errorType);
     }
-    else if (getEvalType()->isEquivalentTo(Type::errorType) )
+    else
         setEvalType(baseType->getElemType());
+
+    if (!(subscript->getEvalType()->isConvertableTo(Type::intType))  ) {
+        flag = false;
+        ReportError::SubscriptNotInteger(subscript);
+        setEvalType(Type::errorType);
+    }
 
     return flag;
 }
@@ -311,7 +317,7 @@ bool Call::CheckBase(SymbolTable *symT) {
         setEvalType(Type::errorType);
         return false;
     }
-    if (dynamic_cast<ArrayType*>(base) != 0 && strcmp(field->getName(), "length") == 0) {
+    if (dynamic_cast<ArrayType*>(base->getEvalType()) != 0 && strcmp(field->getName(), "length") == 0) {
         setEvalType(Type::intType);
         return flag;
     }
@@ -380,7 +386,7 @@ bool NewArrayExpr::Check(SymbolTable* symT) {
     flag = elemType->Check(symT) ? flag : false;
 
 
-    if (elemType->getIdentifier() == NULL)
+    if (elemType->getIdentifier() == NULL || symT->find(elemType->getIdentifier()->getName(), CLASS) != NULL     )
         setEvalType(new ArrayType(*location, elemType));
     else
         ReportError::IdentifierNotDeclared(elemType->getIdentifier(), LookingForType);

@@ -19,7 +19,7 @@ VarDecl::VarDecl(Identifier* n, Type* t) : Decl(n) {
 
 bool VarDecl::BuildTree(SymbolTable* symT) {
     Symbol* sym = symT->findLocal(id->getName());
-    if (sym != nullptr) {
+    if (sym != NULL) {
         ReportError::DeclConflict(this, static_cast<Decl*>(sym->getNode()));
         return false;
     }
@@ -51,7 +51,7 @@ bool ClassDecl::BuildTree(SymbolTable* symT) {
     bool flag = true;
     Symbol* sym = symT->findLocal(id->getName());
 
-    if (sym != nullptr) {
+    if (sym != NULL) {
         ReportError::DeclConflict(this, static_cast<Decl*>(sym->getNode()));
         return false;
     }
@@ -108,8 +108,8 @@ bool ClassDecl::CheckAgainstParents(SymbolTable *symT) {
 
 bool ClassDecl::CheckAgainstInterfaces(SymbolTable *symT) {
     bool flag = true;
-    FnCheckles *vf = NULL;
-    Iterator<FnCheckles*> iter = funcCheckles->GetIterator();
+    ImplementedFunction *vf = NULL;
+    Iterator<ImplementedFunction*> iter = implmentedFunctions->GetIterator();
     Hashtable<NamedType*> *incompleteIntfs = new Hashtable<NamedType*>;
     // Check that all interfaces implemented exists
     for (int i = 0; i < implements->NumElements(); ++i) {
@@ -154,6 +154,45 @@ bool ClassDecl::Check(SymbolTable* symT) {
         flag = members->Nth(i)->Check(symT) ? flag : false;
     return flag;
 }
+
+bool ClassDecl::Inherit(SymbolTable *symT) {
+    bool flag = true;
+    if (extends) {
+        Symbol* base = NULL;
+        if ((base = symT->find(extends->getName(), CLASS)) != NULL) {
+            classScope->setSuper(base->getEnv());
+            parent = dynamic_cast<ClassDecl*>(base->getNode());
+            Assert(parent != 0);
+        }
+    }
+
+    implmentedFunctions = new Hashtable<ImplementedFunction*>;
+    for (int i = 0; i < implements->NumElements(); ++i) {
+        NamedType* interface = implements->Nth(i);
+        Symbol* sym = NULL;
+        if ((sym = symT->find(interface->getName(), INTERFACE)) == NULL) {
+            continue;
+        }
+        InterfaceDecl* intfDecl = dynamic_cast<InterfaceDecl*>(sym->getNode());
+        Assert(intfDecl != 0);
+        List<Decl*>* m = intfDecl->getMembers();
+        for (int j = 0; j < m->NumElements(); ++j) {
+            FnDecl* fn = dynamic_cast<FnDecl*>(m->Nth(j));
+            Assert(fn != 0);
+            ImplementedFunction* vf = NULL;
+            if ((vf = implmentedFunctions->Lookup(fn->getName())) == NULL) {
+                implmentedFunctions->Enter(fn->getName(), new ImplementedFunction(fn, implements->Nth(i)));
+                continue;
+            }
+
+            if (!fn->isValidFn(vf->getPrototype())) {
+                flag = false;
+                ReportError::OverrideMismatch(fn);
+            }
+        }
+    }
+  return flag;
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 InterfaceDecl::InterfaceDecl(Identifier* n, List<Decl*>* m) : Decl(n) {
@@ -166,7 +205,7 @@ bool InterfaceDecl::BuildTree(SymbolTable* symT) {
     bool flag = true;
     Symbol* sym = symT->findLocal(id->getName());
 
-    if (sym != nullptr) {
+    if (sym != NULL) {
         ReportError::DeclConflict(this, static_cast<Decl*>(sym->getNode()));
         flag = false;
     }
@@ -198,7 +237,7 @@ bool FnDecl::BuildTree(SymbolTable* symT) {
     bool flag = true;
     Symbol* sym = symT->findLocal(id->getName());
 
-    if (sym != nullptr) {
+    if (sym != NULL) {
         ReportError::DeclConflict(this, static_cast<Decl*>(sym->getNode()));
         flag = false;
     }
@@ -208,7 +247,7 @@ bool FnDecl::BuildTree(SymbolTable* symT) {
     for (int i = 0; i < formals->NumElements(); ++i)
         flag = formals->Nth(i)->BuildTree(fnScope) ? flag : false;
 
-    if (!(body->BuildTree(fnScope)))
+    if (body && !(body->BuildTree(fnScope)))
         return false;
     return flag;
 }

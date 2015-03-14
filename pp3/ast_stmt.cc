@@ -22,10 +22,21 @@ void Program::Check() {
     *       checking itself, which makes for a great use of inheritance
     *       and polymorphism in the node classes.
     */
+
+    ClassDecl* cl;
     programScope = new SymbolTable();
+    globalEnv = programScope;
 
     for (int i = 0; i < decls->NumElements(); i++)
         decls->Nth(i)->BuildTree(programScope);
+
+    for (int i = 0; i < decls->NumElements(); i++) {
+        cl = dynamic_cast<ClassDecl*>(decls->Nth(i));
+        if (cl == 0) {
+            continue;
+        }
+        cl->Inherit(programScope);
+    }
 
     for (int i = 0; i < decls->NumElements(); i++)
         decls->Nth(i)->Check(programScope);
@@ -180,7 +191,7 @@ bool PrintStmt::Check(SymbolTable* symT) {
       Type* argType = args->Nth(i)->getEvalType();
       if (!isPrintable(argType)) {
         ReportError::PrintArgMismatch(args->Nth(i), i+1, argType);
-        return false;
+        flag = false;
       }
     }
     return flag;

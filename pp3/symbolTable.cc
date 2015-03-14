@@ -63,8 +63,11 @@ Symbol* SymbolTable::findSuper(char* key) {
 }
 
 Symbol* SymbolTable::findClassField(char* className, char* fieldName) {
+    if(className == NULL)
+        return NULL;
     Symbol* classSymbol = find(className);
-    if (classSymbol == NULL) return NULL;
+    if (classSymbol == NULL)
+        return NULL;
     return classSymbol->getEnv()->find(fieldName);
 }
 
