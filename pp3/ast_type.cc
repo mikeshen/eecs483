@@ -31,7 +31,7 @@ Type::Type(const char* n) {
 
 bool NamedType::isConvertableTo(Type* inputType) {
     Symbol* sym = globalEnv->find(id->getName(), CLASS);
-    ClassDecl* classDecl = static_cast<ClassDecl*>(sym->getNode());
+    ClassDecl* classDecl = NULL;
     char* newName = inputType->getName();
 
     if (inputType->isBuiltIn())
@@ -40,7 +40,8 @@ bool NamedType::isConvertableTo(Type* inputType) {
         return true;
     else if (sym == NULL)
         return false;
-    else if (classDecl->ImplementsInterface(newName))
+    classDecl = dynamic_cast<ClassDecl*>(sym->getNode());
+    if (classDecl->ImplementsInterface(newName))
         return true;
     else
         return sym->getEnv()->subclassOf(newName);

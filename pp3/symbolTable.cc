@@ -12,51 +12,34 @@ SymbolTable::SymbolTable() : _parent(NULL), _super(NULL), _this(NULL),
                              blocks(new List<SymbolTable*>) {}
 
 Node* SymbolTable::getThisClass() {
-    if (!_this) return NULL;
-    SymbolTable* temp = _this;
-    return temp->getOwnerNode();
+    if (_this == NULL)
+        return NULL;
+    return (_this)->getOwnerNode();
 }
 
 Symbol* SymbolTable::find(char* key) {
-    SymbolTable* current = this;
-    Symbol* symbol = NULL;
-    for ( ; current != NULL; current = current->getParent())
-        if ((symbol = current->findLocal(key)) != NULL)
-            return symbol;
-    if (_super && (symbol = findSuper(key)) != NULL) return symbol;
-    return NULL;
+    Symbol* symbol = findLocal(key);
+    if (symbol != NULL)
+        return symbol;
+    if (_parent == NULL)
+        return NULL;
+    return  _parent->find(key);
 }
+
 
 Symbol* SymbolTable::findLocal(char* key) {
-    Symbol* symbol = NULL;
-    if ((symbol = table->Lookup(key)) != NULL) return symbol;
-    if (_super && (symbol = findSuper(key)) != NULL) return symbol;
-    return NULL;
-}
-
-Symbol* SymbolTable::findInClass(char* key) {
-    Symbol* symbol = NULL;
-    if ((symbol = findLocal(key)) != NULL) return symbol;
-    if ((symbol = findSuper(key)) != NULL)  return symbol;
-    return NULL;
-}
-
-Symbol* SymbolTable::findUp(char* key) {
-    SymbolTable* current = _parent;
-    for ( ; current != NULL; current = current->getParent()) {
-        Symbol* symbol;
-        if ((symbol = current->findLocal(key)) != NULL)
-            return symbol;
-    }
-    return NULL;
+    Symbol* symbol = table->Lookup(key);
+    if (symbol != NULL)
+        return symbol;
+    if(_super == NULL)
+        return NULL;
+    return findSuper(key);
 }
 
 Symbol* SymbolTable::findSuper(char* key) {
-    SymbolTable* current = _super;
-    if (!_super) return NULL;
-    for ( ; current != NULL; current = current->getSuper()) {
-        Symbol* symbol;
-        if ((symbol = current->findLocal(key)) != NULL)
+    for (SymbolTable* current = _super ; current != NULL; current = current->getSuper()) {
+        Symbol* symbol = current->table->Lookup(key);
+        if (symbol != NULL)
             return symbol;
     }
     return NULL;
@@ -72,21 +55,13 @@ Symbol* SymbolTable::findClassField(char* className, char* fieldName) {
 }
 
 bool SymbolTable::subclassOf(char* key) {
-/*    SymbolTable* current = _super;
-    ClassDecl* classDecl = NULL;
-    if (!_super) {
-        return false;
-    }
-    for ( ; current != NULL; current = current->getSuper()) {
-        classDecl = dynamic_cast<ClassDecl*>(current->getRefNode());
-        if (classDecl == 0) {
-            continue;
-        }
-        if (strcmp(key, classDecl->GetName()) == 0 ||
-            classDecl->ImplementsInterface(key)) {
+    for (SymbolTable* current = _super; current != NULL; current = current->getSuper()) {
+        ClassDecl* classDecl = dynamic_cast<ClassDecl*>(current->getOwnerNode());
+        if (classDecl == 0)
+            continue; //////////////////////////////////////////////////////////////////////////////This part looks really shady
+        if (strcmp(key, classDecl->getName()) == 0 || classDecl->ImplementsInterface(key))
             return true;
-        }
-    }*/
+    }
     return false;
 }
 
@@ -120,8 +95,4 @@ SymbolTable* SymbolTable::addUnderScope(char* key, Node* node, E_Type type) {
     newEnv->setOwnerNode(node);
     lastnode = NULL;
     return newEnv;
-}
-
-int SymbolTable::getSize() {
-    return table->NumEntries();
 }

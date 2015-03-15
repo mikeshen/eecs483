@@ -1,5 +1,11 @@
+class Test {
+    int func() {}
+    int go(int hello) { Print(hello); }
+}
+
 void main() {
     int hello;
-    this;
-    this + hello;
+    Test example;
+    example.func();
+    example.go(hello);
 }

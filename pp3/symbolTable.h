@@ -53,8 +53,8 @@ protected:
     SymbolTable* _parent;
     SymbolTable* _super;
     SymbolTable* _this;
-    Node* ownernode;
-    Node* lastnode;
+    Node* ownernode; //Corresponding node
+    Node* lastnode; //Break point
     Hashtable<Symbol*>* table;
     List<SymbolTable*>* blocks;
 public:
@@ -116,20 +116,6 @@ public:
         return (s && s->getType() == type) ? s : NULL;
     }
 
-    Symbol* findInClass(char* key);
-
-    Symbol* findInClass(char* key, E_Type type) {
-        Symbol* s = findInClass(key);
-        return (s && s->getType() == type) ? s : NULL;
-    }
-
-    Symbol* findUp(char* key);
-
-    Symbol* findUp(char* key, E_Type type) {
-        Symbol* s = findUp(key);
-        return (s && s->getType() == type) ? s : NULL;
-    }
-
     Symbol* findSuper(char* key);
 
     Symbol* findSuper(char* key, E_Type type) {
@@ -152,7 +138,6 @@ public:
 
     SymbolTable* addUnderScope(char* key, Node* node, E_Type type);
 
-    int getSize();
 };
 
 #endif

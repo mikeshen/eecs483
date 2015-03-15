@@ -103,6 +103,7 @@ bool ClassDecl::CheckAgainstParents(SymbolTable *symT) {
             }
         }
     }
+    std::cout << flag << std::endl;
     return flag;
 }
 
@@ -123,7 +124,7 @@ bool ClassDecl::CheckAgainstInterfaces(SymbolTable *symT) {
     // Check each interface's methods have been implemented with correct type
     // signature. Otherwise, give OverrideMismatch error
     while ((vf = iter.GetNextValue()) != NULL) {
-         Symbol* sym = classScope->findInClass(vf->getPrototype()->getName(), FUNCTION);
+         Symbol* sym = classScope->findLocal(vf->getPrototype()->getName(), FUNCTION);
         if (sym == NULL) {
             incompleteIntfs->Enter(vf->getIntfType()->getName(), vf->getIntfType(), false);
             flag = false;
