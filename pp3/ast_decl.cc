@@ -65,7 +65,7 @@ bool ClassDecl::BuildTree(SymbolTable* symT) {
     return true;
 }
 
-bool ClassDecl::ImplementsInterface(char *name) {
+bool ClassDecl::FulfillsInterface(char *name) {
   for (int i = 0; i < implements->NumElements(); ++i)
     if (strcmp(name, implements->Nth(i)->getName()) == 0)
       return true;
@@ -74,45 +74,42 @@ bool ClassDecl::ImplementsInterface(char *name) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool ClassDecl::CheckAgainstParents(SymbolTable *symT) {
+bool ClassDecl::CheckClassParents(SymbolTable *symT) {
     bool flag = true;
-    Symbol *s = NULL;
-    // Check that parent exists
-    if (extends && (s = symT->find(extends->getName())) != NULL) {
-        ReportError::IdentifierNotDeclared(extends->getIdentifier(), LookingForClass);
+    Symbol *s;
+    if (extends && (s = symT->find(extends->getName())) == NULL) {
         flag = false;
+        ReportError::IdentifierNotDeclared(extends->getIdentifier(), LookingForClass);
     }
 
     for (int i = 0; i < members->NumElements(); ++i) {
+        VarDecl *field;
         FnDecl *method = dynamic_cast<FnDecl*>(members->Nth(i));
-        VarDecl *field = NULL;
         if (method != 0) {
             if ((s = classScope->findSuper(method->getName(), FUNCTION)) != NULL) {
                 FnDecl *otherMethod = dynamic_cast<FnDecl*>(s->getNode());
                 if (!method->isValidFn(otherMethod)) {
-                    ReportError::OverrideMismatch(method);
                     flag = false;
+                    ReportError::OverrideMismatch(method);
                 }
             }
         }
         else {
             field = dynamic_cast<VarDecl*>(members->Nth(i));
             if ((s = classScope->findSuper(field->getName(), VARIABLE)) != NULL) {
-                ReportError::DeclConflict(field, dynamic_cast<Decl*>(s->getNode()));
                 flag = false;
+                ReportError::DeclConflict(field, dynamic_cast<Decl*>(s->getNode()));
             }
         }
     }
-    std::cout << flag << std::endl;
     return flag;
 }
 
-bool ClassDecl::CheckAgainstInterfaces(SymbolTable *symT) {
+bool ClassDecl::CheckClassInterfaces(SymbolTable *symT) {
     bool flag = true;
     ImplementedFunction *vf = NULL;
     Iterator<ImplementedFunction*> iter = implmentedFunctions->GetIterator();
-    Hashtable<NamedType*> *incompleteIntfs = new Hashtable<NamedType*>;
-    // Check that all interfaces implemented exists
+    Hashtable<NamedType*> *incompleteInterFaces = new Hashtable<NamedType*>;
     for (int i = 0; i < implements->NumElements(); ++i) {
         NamedType *intf = implements->Nth(i);
         Symbol* sym = symT->find(intf->getName());
@@ -121,12 +118,10 @@ bool ClassDecl::CheckAgainstInterfaces(SymbolTable *symT) {
             flag = false;
         }
     }
-    // Check each interface's methods have been implemented with correct type
-    // signature. Otherwise, give OverrideMismatch error
     while ((vf = iter.GetNextValue()) != NULL) {
          Symbol* sym = classScope->findLocal(vf->getPrototype()->getName(), FUNCTION);
         if (sym == NULL) {
-            incompleteIntfs->Enter(vf->getIntfType()->getName(), vf->getIntfType(), false);
+            incompleteInterFaces->Enter(vf->getIntfType()->getName(), vf->getIntfType(), false);
             flag = false;
             continue;
         }
@@ -137,20 +132,22 @@ bool ClassDecl::CheckAgainstInterfaces(SymbolTable *symT) {
             flag = false;
         }
     }
-    // Report interfaces that have not been implemented
-    Iterator<NamedType*> iter2 = incompleteIntfs->GetIterator();
-    NamedType *intf_type = NULL;
-    while ((intf_type = iter2.GetNextValue()) != NULL) {
-        ReportError::InterfaceNotImplemented(this, intf_type);
-    }
-    delete incompleteIntfs;
+    ReportBadInterfaces(incompleteInterFaces);
+    delete incompleteInterFaces;
     return flag;
+}
+
+void ClassDecl::ReportBadInterfaces(Hashtable<NamedType*>* incompleteInterFaces) {
+    Iterator<NamedType*> iter2 = incompleteInterFaces->GetIterator();
+    NamedType *intf_type = NULL;
+    while ((intf_type = iter2.GetNextValue()) != NULL)
+        ReportError::InterfaceNotImplemented(this, intf_type);
 }
 
 bool ClassDecl::Check(SymbolTable* symT) {
     bool flag = true;
-    flag = CheckAgainstParents(symT) ? flag : false;
-    //flag = CheckAgainstInterfaces(symT) ? flag : false;
+    flag = CheckClassParents(symT) ? flag : false;
+    flag = CheckClassInterfaces(symT) ? flag : false;
     for (int i = 0; i < members->NumElements(); ++i)
         flag = members->Nth(i)->Check(symT) ? flag : false;
     return flag;
@@ -158,25 +155,22 @@ bool ClassDecl::Check(SymbolTable* symT) {
 
 bool ClassDecl::Inherit(SymbolTable *symT) {
     bool flag = true;
-    if (extends) {
-        Symbol* base = NULL;
-        if ((base = symT->find(extends->getName(), CLASS)) != NULL) {
-            classScope->setSuper(base->getEnv());
-            parent = dynamic_cast<ClassDecl*>(base->getNode());
-            Assert(parent != 0);
-        }
+    Symbol* base;
+    if (extends && (base = symT->find(extends->getName(), CLASS)) != NULL) {
+        classScope->setSuper(base->getEnv());
+        parent = dynamic_cast<ClassDecl*>(base->getNode());
+        Assert(parent != 0);
     }
 
     implmentedFunctions = new Hashtable<ImplementedFunction*>;
     for (int i = 0; i < implements->NumElements(); ++i) {
         NamedType* interface = implements->Nth(i);
         Symbol* sym = NULL;
-        if ((sym = symT->find(interface->getName(), INTERFACE)) == NULL) {
+        if ((sym = symT->find(interface->getName(), INTERFACE)) == NULL)
             continue;
-        }
-        InterfaceDecl* intfDecl = dynamic_cast<InterfaceDecl*>(sym->getNode());
-        Assert(intfDecl != 0);
-        List<Decl*>* m = intfDecl->getMembers();
+        InterfaceDecl* dec = dynamic_cast<InterfaceDecl*>(sym->getNode());
+        Assert(dec != 0);
+        List<Decl*>* m = dec->getMembers();
         for (int j = 0; j < m->NumElements(); ++j) {
             FnDecl* fn = dynamic_cast<FnDecl*>(m->Nth(j));
             Assert(fn != 0);

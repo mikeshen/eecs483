@@ -61,11 +61,12 @@ protected:
 public:
     ClassDecl(Identifier* name, NamedType* extends,
     List<NamedType*>* implements, List<Decl*>* members);
-    bool ImplementsInterface(char* name);
+    bool FulfillsInterface(char* name);
     virtual bool BuildTree(SymbolTable* symT);
     virtual bool Check(SymbolTable* symT);
-    bool CheckAgainstParents(SymbolTable* symT);
-    bool CheckAgainstInterfaces(SymbolTable* symT);
+    bool CheckClassParents(SymbolTable* symT);
+    bool CheckClassInterfaces(SymbolTable* symT);
+    void ReportBadInterfaces(Hashtable<NamedType*>* incompleteInterFaces);
     bool Inherit(SymbolTable* symT);
 };
 

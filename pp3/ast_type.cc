@@ -41,7 +41,7 @@ bool NamedType::isConvertableTo(Type* inputType) {
     else if (sym == NULL)
         return false;
     classDecl = dynamic_cast<ClassDecl*>(sym->getNode());
-    if (classDecl->ImplementsInterface(newName))
+    if (classDecl->FulfillsInterface(newName))
         return true;
     else
         return sym->getEnv()->subclassOf(newName);

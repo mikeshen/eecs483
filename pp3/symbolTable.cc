@@ -59,7 +59,7 @@ bool SymbolTable::subclassOf(char* key) {
         ClassDecl* classDecl = dynamic_cast<ClassDecl*>(current->getOwnerNode());
         if (classDecl == 0)
             continue; //////////////////////////////////////////////////////////////////////////////This part looks really shady
-        if (strcmp(key, classDecl->getName()) == 0 || classDecl->ImplementsInterface(key))
+        if (strcmp(key, classDecl->getName()) == 0 || classDecl->FulfillsInterface(key))
             return true;
     }
     return false;

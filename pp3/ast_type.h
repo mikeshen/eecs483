@@ -52,7 +52,8 @@ class NamedType : public Type
 
   public:
 	NamedType(Identifier* i);
-	virtual bool Check(SymbolTable* symT) { return symT->find(id->getName()) != NULL; }
+	virtual bool Check(SymbolTable* symT) { return symT->find(id->getName(), CLASS) != NULL ||
+		                                           symT->find(id->getName(), INTERFACE) != NULL; }
 	void PrintToStream(std::ostream& out) { out << id; }
 
 	char* getName() { return id->getName();}
