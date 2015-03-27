@@ -7,61 +7,155 @@
 #include "ast_decl.h"
 #include "ast_expr.h"
 
+SymbolTable* globalEnv;
 
-Program::Program(List<Decl*> *d) {
+Program::Program(List<Decl*>* d) {
     Assert(d != NULL);
     (decls=d)->SetParentAll(this);
 }
 
 void Program::Check() {
-    /* You can use your pp3 semantic analysis or leave it out if
-     * you want to avoid the clutter.  We won't test pp4 against 
-     * semantically-invalid programs.
-     */
-}
-void Program::Emit() {
-    /* pp4: here is where the code generation is kicked off.
-     *      The general idea is perform a tree traversal of the
-     *      entire program, generating instructions as you go.
-     *      Each node can have its own way of translating itself,
-     *      which makes for a great use of inheritance and
-     *      polymorphism in the node classes.
-     */
+    /* pp3: here is where the semantic analyzer is kicked off.
+    *       The general idea is perform a tree traversal of the
+    *       entire program, examining all constructs for compliance
+    *       with the semantic rules.  Each node can have its own way of
+    *       checking itself, which makes for a great use of inheritance
+    *       and polymorphism in the node classes.
+    */
+
+    ClassDecl* cl;
+    programScope = new SymbolTable();
+    globalEnv = programScope;
+
+    for (int i = 0; i < decls->NumElements(); i++)
+        decls->Nth(i)->BuildTree(programScope);
+
+    for (int i = 0; i < decls->NumElements(); i++) {
+        cl = dynamic_cast<ClassDecl*>(decls->Nth(i));
+        if (cl == 0)
+            continue;
+        cl->Inherit(programScope);
+    }
+
+    Emit();
+
 }
 
-StmtBlock::StmtBlock(List<VarDecl*> *d, List<Stmt*> *s) {
+
+
+void Program::Emit() {
+
+}
+
+StmtBlock::StmtBlock(List<VarDecl*>* d, List<Stmt*>* s) {
     Assert(d != NULL && s != NULL);
     (decls=d)->SetParentAll(this);
     (stmts=s)->SetParentAll(this);
 }
 
-ConditionalStmt::ConditionalStmt(Expr *t, Stmt *b) { 
+bool StmtBlock::BuildTree(SymbolTable* symT) {
+
+    blockScope = symT->addScope();
+    bool flag = true;
+
+    for (int i = 0; i < decls->NumElements(); i++)
+        flag = decls->Nth(i)->BuildTree(blockScope) ? flag : false;
+
+    for (int i = 0; i < stmts->NumElements(); i++)
+        flag = stmts->Nth(i)->BuildTree(blockScope) ? flag : false;
+
+    return flag;
+}
+
+
+ConditionalStmt::ConditionalStmt(Expr* t, Stmt* b) {
     Assert(t != NULL && b != NULL);
-    (test=t)->SetParent(this); 
+    (test=t)->SetParent(this);
     (body=b)->SetParent(this);
 }
 
-ForStmt::ForStmt(Expr *i, Expr *t, Expr *s, Stmt *b): LoopStmt(t, b) { 
+ForStmt::ForStmt(Expr* i, Expr* t, Expr* s, Stmt* b): LoopStmt(t, b) {
     Assert(i != NULL && t != NULL && s != NULL && b != NULL);
     (init=i)->SetParent(this);
     (step=s)->SetParent(this);
 }
 
-IfStmt::IfStmt(Expr *t, Stmt *tb, Stmt *eb): ConditionalStmt(t, tb) { 
+bool ForStmt::BuildTree(SymbolTable* symT) {
+    blockScope = symT->addScope();
+    blockScope->setLastNode(this);
+    return body->BuildTree(blockScope);
+}
+
+
+bool WhileStmt::BuildTree(SymbolTable* symT) {
+    blockScope = symT->addScope();
+
+    blockScope->setLastNode(this);
+    return body->BuildTree(blockScope);
+}
+
+
+IfStmt::IfStmt(Expr* t, Stmt* tb, Stmt* eb): ConditionalStmt(t, tb) {
     Assert(t != NULL && tb != NULL); // else can be NULL
     elseBody = eb;
     if (elseBody) elseBody->SetParent(this);
 }
 
+bool IfStmt::BuildTree(SymbolTable* symT) {
+    bool flag = true;
+    flag = body->BuildTree(symT) ? flag : false;
+    if (elseBody != NULL)
+        flag = elseBody->BuildTree(symT) ? flag : false;
+    return flag;
+}
 
-ReturnStmt::ReturnStmt(yyltype loc, Expr *e) : Stmt(loc) { 
+
+ReturnStmt::ReturnStmt(yyltype loc, Expr* e) : Stmt(loc) {
     Assert(e != NULL);
     (expr=e)->SetParent(this);
 }
-  
-PrintStmt::PrintStmt(List<Expr*> *a) {    
+
+
+PrintStmt::PrintStmt(List<Expr*>* a) {
     Assert(a != NULL);
     (args=a)->SetParentAll(this);
 }
 
+bool PrintStmt::isPrintable(Type *type) {
+  return (type->isConvertableTo(Type::intType) || type->isConvertableTo(Type::boolType) || type->isConvertableTo(Type::stringType));
+}
 
+
+Case::Case(IntConstant* v, List<Stmt*>* s) {
+    Assert(s != NULL);
+    value = v;
+    if (value) value->SetParent(this);
+    (stmts=s)->SetParentAll(this);
+}
+
+// deprecated
+bool Case::BuildTree(SymbolTable* symT) {
+    caseScope = symT->addScope();
+    bool flag = true;
+
+    caseScope->setLastNode(this);
+    for (int i = 0; i < stmts->NumElements(); i++)
+        flag = stmts->Nth(i)->BuildTree(symT) ? flag : false;
+
+    return flag;
+}
+
+SwitchStmt::SwitchStmt(Expr* e, List<Case*>* c) {
+    Assert(e != NULL && c != NULL);
+    (expr=e)->SetParent(this);
+    (cases=c)->SetParentAll(this);
+}
+
+// deprecated
+bool SwitchStmt::BuildTree(SymbolTable* symT) {
+    bool flag = true;
+    for (int i = 0; i < cases->NumElements(); i++)
+        flag = cases->Nth(i)->BuildTree(symT) ? flag : false;
+
+    return flag;
+}
