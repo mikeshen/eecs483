@@ -158,7 +158,7 @@ void FnDecl::Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable *symT) {
     beginFn = codegen->GenBeginFunc();
     for (int i = 0; i < formals->NumElements(); ++i)
         formals->Nth(i)->Emit(paramScoper, codegen, fnScope);
-    // body->Emit(bodyScoper->GetSize()); TODO undecomment this
+    body->Emit(bodyScoper->GetSize());
     beginFn->SetFrameSize(bodyScoper->GetSize());
     codegen->GenEndFunc();
 
@@ -177,7 +177,7 @@ void FnDecl::EmitHelper(ClassDecl* classDecl, Scoper* scoper,
     fnScope->add(fnThis, NULL, paramThis);
     for (int i = 0; i < formals->NumElements(); ++i)
         formals->Nth(i)->Emit(paramScoper, codegen, fnScope);
-    // body->Emit(bodyScoper, codegen, fnScope);
+    body->Emit(bodyScoper, codegen, fnScope);
     beginFn->SetFrameSize(bodyScoper->GetSize());
     codegen->GenEndFunc();
 }

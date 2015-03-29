@@ -73,7 +73,7 @@ bool StmtBlock::BuildTree(SymbolTable* symT) {
     return flag;
 }
 
-void StmtBlock::Emit(Scoper *scopee, CodeGenerator *codegen, SymTable *symT) {
+void StmtBlock::Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT) {
 	for (int i = 0; i < decls->NumElements(); ++i)
 		decls->Nth(i)->Emit(scopee, codegen, symT);
 	for (int i = 0; i< stmts->NumElements(); ++i)
@@ -98,13 +98,13 @@ bool ForStmt::BuildTree(SymbolTable* symT) {
     return body->BuildTree(blockScope);
 }
 
-void ForStmt::Emit(Scoper *scopee, CodeGenerator *codegen, SymTable *symT) {
+void ForStmt::Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT) {
 	char* endPoint = codegen->NewLabel();
 	char* loopThing = codegen->NewLabel();
 	init->Emit(scopee, codegen, blockScope);
 	codegen->GenLabel(loopThing);
 	test->Emit(scopee, codegen, blockScope);
-	codegen->GenIfZ(test->get->gerFrameLoc(), endPoint);
+	codegen->GenIfZ(test->getFrameLoc(), endPoint);
 	body->Emit(scopee, codegen, blockScope);
 	step->Emit(scopee, codegen, blockScope);
 	codegen->GenGoto(loopThing);
