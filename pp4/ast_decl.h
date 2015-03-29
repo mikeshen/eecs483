@@ -33,7 +33,7 @@ public:
     virtual Type* getType() { return NULL; }
     char* getName() { return id->getName(); }
     Identifier* getIdentifier() { return id; }
-    virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymTable *symT) {}
+    virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable *symT) {}
 };
 
 class VarDecl : public Decl
@@ -45,7 +45,7 @@ public:
     VarDecl(Identifier* name, Type* type);
     virtual bool BuildTree(SymbolTable* symT);
     virtual Type* getType() { return type; }
-	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymTable *symT);
+	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable *symT);
 };
 
 class ClassDecl : public Decl
@@ -86,6 +86,12 @@ protected:
     Stmt* body;
     SymbolTable* fnScope;
 
+    Scoper* paramScoper;
+    Scoper* bodyScoper;
+    char* methodLabel;
+    char* functionLabel;
+    int offset;
+
 public:
     FnDecl(Identifier* name, Type* returnType, List<VarDecl*>* formals);
     void SetFunctionBody(Stmt* b);
@@ -93,6 +99,8 @@ public:
     Type* GetReturnType() { return returnType; }
     Type* GetType() { return returnType; }
     List<VarDecl*>* GetFormals() { return formals; }
+    virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable *symT);
+    void EmitHelper(ClassDecl* classDecl, Scoper *scoper, CodeGenerator *codegen, SymbolTable *symT);
 };
 
 

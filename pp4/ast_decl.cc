@@ -27,13 +27,11 @@ bool VarDecl::BuildTree(SymbolTable* symT) {
     return true;
 }
 
-void VarDecl::Emit(Scoper *scopee, CodeGenerator *codegen, SymTable *symT) {
-	Symbol* s = symT->find(name->getName(), VARIABLE);
+void VarDecl::Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable *symT) {
+	Symbol* s = symT->find(id->getName(), VARIABLE);
 	Location* l = scopee->Alloc(id->getName(), 4);
 	s->setLoc(l);
 }
-
-
 
 ClassDecl::ClassDecl(Identifier* n, NamedType* ex, List<NamedType*>* imp, List<Decl*>* m) : Decl(n) {
     // extends can be NULL, impl & mem may be empty lists but cannot be NULL
@@ -147,6 +145,41 @@ bool FnDecl::BuildTree(SymbolTable* symT) {
     if (body && !(body->BuildTree(fnScope)))
         return false;
     return flag;
+}
+
+void FnDecl::Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable *symT) {
+    Symbol *s = NULL;
+    BeginFunc *beginFn;
+    paramScoper = new Scoper(fpRelative, UP);
+    bodyScoper = new Scoper(fpRelative, DOWN);
+
+    functionLabel = codegen->NewLabel();
+    codegen->GenLabel(functionLabel);
+    beginFn = codegen->GenBeginFunc();
+    for (int i = 0; i < formals->NumElements(); ++i)
+        formals->Nth(i)->Emit(paramScoper, codegen, fnScope);
+    // body->Emit(bodyScoper->GetSize()); TODO undecomment this
+    beginFn->SetFrameSize(bodyScoper->GetSize());
+    codegen->GenEndFunc();
+
+}
+
+void FnDecl::EmitHelper(ClassDecl* classDecl, Scoper* scoper,
+                        CodeGenerator* codegen, SymbolTable* symT) {
+    BeginFunc* beginFn;
+    paramScoper = new Scoper(fpRelative, UP);
+    bodyScoper = new Scoper(fpRelative, DOWN);
+    codegen->GenLabel(methodLabel);
+
+    beginFn = codegen->GenBeginFunc();
+    char* fnThis = strdup("this");
+    Location* paramThis = paramScoper->Alloc(fnThis, 4);
+    fnScope->add(fnThis, NULL, paramThis);
+    for (int i = 0; i < formals->NumElements(); ++i)
+        formals->Nth(i)->Emit(paramScoper, codegen, fnScope);
+    // body->Emit(bodyScoper, codegen, fnScope);
+    beginFn->SetFrameSize(bodyScoper->GetSize());
+    codegen->GenEndFunc();
 }
 
 void FnDecl::SetFunctionBody(Stmt* b) {

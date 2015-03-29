@@ -3,6 +3,8 @@
 /** Class: Symbol **/
 Symbol::Symbol(E_Type t, Node* n) : type(t), node(n), env(NULL) {}
 
+Symbol::Symbol(E_Type t, Node* n, Location* l) : type(t), node(n), loc(l) {}
+
 Symbol::Symbol(E_Type t, Node* n, SymbolTable* e) : type(t), node(n), env(e) {}
 
 /** Class: SymbolTable **/
@@ -67,6 +69,12 @@ bool SymbolTable::subclassOf(char* key) {
 
 bool SymbolTable::add(char* key, Node* node) {
     Symbol* s = new Symbol(VARIABLE, node);
+    table->Enter(key, s, false);
+    return true;
+}
+
+bool SymbolTable::add(char* key, Node* node, Location* loc) {
+    Symbol* s = new Symbol(VARIABLE, node, loc);
     table->Enter(key, s, false);
     return true;
 }

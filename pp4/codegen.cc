@@ -9,7 +9,7 @@
 #include <string.h>
 #include "tac.h"
 #include "mips.h"
-  
+
 CodeGenerator::CodeGenerator()
 {
   code = new List<Instruction*>();
@@ -38,7 +38,7 @@ Location *CodeGenerator::GenTempVariable()
   return result;
 }
 
- 
+
 Location *CodeGenerator::GenLoadConstant(int value)
 {
   Location *result = GenTempVariable();
@@ -51,14 +51,14 @@ Location *CodeGenerator::GenLoadConstant(const char *s)
   Location *result = GenTempVariable();
   code->Append(new LoadStringConstant(result, s));
   return result;
-} 
+}
 
 Location *CodeGenerator::GenLoadLabel(const char *label)
 {
   Location *result = GenTempVariable();
   code->Append(new LoadLabel(result, label));
   return result;
-} 
+}
 
 
 void CodeGenerator::GenAssign(Location *dst, Location *src)
@@ -109,7 +109,6 @@ void CodeGenerator::GenReturn(Location *val)
   code->Append(new Return(val));
 }
 
-
 BeginFunc *CodeGenerator::GenBeginFunc()
 {
   BeginFunc *result = new BeginFunc;
@@ -147,8 +146,8 @@ Location *CodeGenerator::GenACall(Location *fnAddr, bool fnHasReturnValue)
   code->Append(new ACall(fnAddr, result));
   return result;
 }
- 
- 
+
+
 static struct _builtin {
   const char *label;
   int numArgs;

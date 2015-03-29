@@ -3,6 +3,7 @@
 #include "ast.h"
 #include "list.h"
 #include "hashtable.h"
+#include "tac.h"
 
 enum E_Type {
     VARIABLE,
@@ -16,6 +17,8 @@ class SymbolTable;
 class Symbol {
 public:
     Symbol(E_Type t, Node* n);
+
+    Symbol(E_Type t, Node* n, Location* loc);
 
     Symbol(E_Type t, Node* n, SymbolTable* e);
 
@@ -42,11 +45,11 @@ public:
     void setEnv(SymbolTable* e) {
         env = e;
     }
-	
+
 	Location* getLoc() {
 		return loc;
 	}
-	
+
 	void setLoc(Location* l) {
 		loc = l;
 	}
@@ -142,6 +145,8 @@ public:
     bool subclassOf(char* key);
 
     bool add(char* key, Node* node);
+
+    bool add(char* key, Node* node, Location* loc);
 
     SymbolTable* addScope();
 
