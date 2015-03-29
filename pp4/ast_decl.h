@@ -33,7 +33,7 @@ public:
     virtual Type* getType() { return NULL; }
     char* getName() { return id->getName(); }
     Identifier* getIdentifier() { return id; }
-    void Emit() {}
+    virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymTable *symT) {}
 };
 
 class VarDecl : public Decl
@@ -45,6 +45,7 @@ public:
     VarDecl(Identifier* name, Type* type);
     virtual bool BuildTree(SymbolTable* symT);
     virtual Type* getType() { return type; }
+	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymTable *symT);
 };
 
 class ClassDecl : public Decl

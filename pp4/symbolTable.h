@@ -42,10 +42,19 @@ public:
     void setEnv(SymbolTable* e) {
         env = e;
     }
+	
+	Location* getLoc() {
+		return loc;
+	}
+	
+	void setLoc(Location* l) {
+		loc = l;
+	}
 protected:
     E_Type type;
     Node* node;
     SymbolTable* env;
+	Location* loc;
 };
 
 class SymbolTable {

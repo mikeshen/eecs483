@@ -27,6 +27,14 @@ bool VarDecl::BuildTree(SymbolTable* symT) {
     return true;
 }
 
+void VarDecl::Emit(Scoper *scopee, CodeGenerator *codegen, SymTable *symT) {
+	Symbol* s = symT->find(name->getName(), VARIABLE);
+	Location* l = scopee->Alloc(id->getName(), 4);
+	s->setLoc(l);
+}
+
+
+
 ClassDecl::ClassDecl(Identifier* n, NamedType* ex, List<NamedType*>* imp, List<Decl*>* m) : Decl(n) {
     // extends can be NULL, impl & mem may be empty lists but cannot be NULL
     Assert(n != NULL && imp != NULL && m != NULL);
