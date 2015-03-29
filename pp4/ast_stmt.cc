@@ -104,7 +104,7 @@ void ForStmt::Emit(Scoper *scopee, CodeGenerator *codegen, SymTable *symT) {
 	init->Emit(scopee, codegen, blockScope);
 	codegen->GenLabel(loopThing);
 	test->Emit(scopee, codegen, blockScope);
-	codegen->GenIfZ(test->get->/////////////////////////////////////////////////////////////////////
+	codegen->GenIfZ(test->get->gerFrameLoc(), endPoint);
 	body->Emit(scopee, codegen, blockScope);
 	step->Emit(scopee, codegen, blockScope);
 	codegen->GenGoto(loopThing);
