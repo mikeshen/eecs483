@@ -41,9 +41,15 @@ void Program::Check() {
 
 }
 
-
-
 void Program::Emit() {
+    codegen = new CodeGenerator;
+    scoper = new Scoper(gpRelative, UP);
+    for(int i = 0; i < decls->NumElements(); ++i) {
+        VarDecl* varDecl = dynamic_cast<VarDecl*>(decls->Nth(i));
+        if (varDecl != 0)
+            varDecl->Emit(scoper, codegen, programScope);
+    }
+    // TODO incomplete function
 
 }
 

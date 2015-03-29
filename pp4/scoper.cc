@@ -1,27 +1,28 @@
 #include "scoper.h"
-Scoper::Scoper(Segment s, Growth d) {
-	off = initOff = 0;
-	if (s == fpRelative && d == DOWN) {
-		initOff = off = -4;
-	}
-	growth = d;
-	segment = s;
+
+Scoper::Scoper(Segment s, Growth d) :
+    offset(0), initOffset(0), growth(d), segment(s)
+{
+	if (s == fpRelative && d == DOWN)
+		initOffset = offset = -4;
 }
-Scoper::Scoper(Scoper *src) {
-	off = src->GetOff();
-	initOff = src->GetInitOff();
-	growth = src->GetGrowth();
-	segment = src->GetSegment();
+
+Scoper::Scoper(Scoper* src) :
+	offset(src->GetOffset()),
+	initOffset(src->GetInitOffset()),
+	growth(src->GetGrowth()),
+	segment(src->GetSegment())
+{}
+
+Location* Scoper::Alloc(char* name, int size) {
+	if (growth == UP)
+		offset += size;
+	else
+		offset -= size;
+	return new Location(segment, offset, name);
 }
-Location *Scoper::Alloc(char *name, int size) {
-	if (growth == UP) {
-		off += size;
-	} else {
-		off -= size;
-	}
-	return new Location(segment, off, name);
-}
+
 int Scoper::GetSize() {
-	int size = off - initOff;
+	int size = offset - initOffset;
 	return (size < 0) ? (size * -1) : size;
 }

@@ -25,7 +25,8 @@
  protected:
     SymbolTable* programScope;
     List<Decl*>* decls;
-
+    CodeGenerator* codegen;
+    Scoper* scoper;
 public:
     Program(List<Decl*>* declList);
     void Check();
