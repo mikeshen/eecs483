@@ -38,7 +38,6 @@ void Program::Check() {
     }
 
     Emit();
-
 }
 
 void Program::Emit() {
@@ -118,6 +117,16 @@ bool WhileStmt::BuildTree(SymbolTable* symT) {
     return body->BuildTree(blockScope);
 }
 
+void WhileStmt::Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT) {
+    char* endPoint = codegen->NewLabel();
+    char* loopThing = codegen->NewLabel();
+    codegen->GenLabel(loopThing);
+    test->Emit(scopee, codegen, blockScope);
+    codegen->GenIfZ(test->getFrameLoc(), endPoint);
+    body->Emit(scopee, codegen, blockScope);
+    codegen->GenGoto(loopThing);
+    codegen->GenLabel(endPoint);
+}
 
 IfStmt::IfStmt(Expr* t, Stmt* tb, Stmt* eb): ConditionalStmt(t, tb) {
     Assert(t != NULL && tb != NULL); // else can be NULL
@@ -133,12 +142,38 @@ bool IfStmt::BuildTree(SymbolTable* symT) {
     return flag;
 }
 
+void IfStmt::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
+    char* conditionLabel = codegen->NewLabel();
+
+    test->Emit(scopee, codegen, symT);
+    codegen->GenIfZ(test->getFrameLoc(), conditionLabel);
+    body->Emit(scopee, codegen, symT);
+    if(!elseBody) {
+        codegen->GenLabel(conditionLabel);
+        return;
+    }
+
+    char* elseBlock = codegen->NewLabel();
+    codegen->GenGoto(elseBlock);
+    codegen->GenLabel(conditionLabel);
+    elseBody->Emit(scopee, codegen, symT);
+    codegen->GenLabel(elseBlock);
+}
+
+void BreakStmt::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
+    LoopStmt* loopNode = dynamic_cast<LoopStmt*>(symT->getLastNode());
+    codegen->GenGoto(loopNode->GetNextLabel());
+}
 
 ReturnStmt::ReturnStmt(yyltype loc, Expr* e) : Stmt(loc) {
     Assert(e != NULL);
     (expr=e)->SetParent(this);
 }
 
+void ReturnStmt::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
+    expr->Emit(scopee, codegen, symT);
+    // codegen->GenReturn(expr->GetFrameLocation()); TODO expr not ready yet
+}
 
 PrintStmt::PrintStmt(List<Expr*>* a) {
     Assert(a != NULL);
@@ -149,7 +184,17 @@ bool PrintStmt::isPrintable(Type *type) {
   return (type->isConvertableTo(Type::intType) || type->isConvertableTo(Type::boolType) || type->isConvertableTo(Type::stringType));
 }
 
+void PrintStmt::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
+    // TODO finish this function
+    // Expr* arg = NULL;
+    // Location* loc = NULL;
+    // Type* type = NULL;
 
+    // for (int i = 0; i < args->NumElements(); ++i) {
+    //     arg = args->Nth(i);
+    //     arg->Emit(scopee, codegen, symT);
+    // }
+}
 Case::Case(IntConstant* v, List<Stmt*>* s) {
     Assert(s != NULL);
     value = v;

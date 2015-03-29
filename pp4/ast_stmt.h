@@ -75,7 +75,11 @@ class LoopStmt : public ConditionalStmt
 {
 public:
     LoopStmt(Expr* testExpr, Stmt* body)
-    : ConditionalStmt(testExpr, body) {}
+    : ConditionalStmt(testExpr, body), nextLabel(NULL) {}
+
+    char* GetNextLabel() { return nextLabel; }
+protected:
+    char* nextLabel;
 };
 
 class ForStmt : public LoopStmt
@@ -94,7 +98,7 @@ class WhileStmt : public LoopStmt
 public:
     WhileStmt(Expr* test, Stmt* body) : LoopStmt(test, body) {}
     virtual bool BuildTree(SymbolTable* symT);
-	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT) {}
+	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT);
 };
 
 class IfStmt : public ConditionalStmt
@@ -105,14 +109,14 @@ protected:
 public:
     IfStmt(Expr* test, Stmt* thenBody, Stmt* elseBody);
     virtual bool BuildTree(SymbolTable* symT);
-	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT) {}
+	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT);
 };
 
 class BreakStmt : public Stmt
 {
 public:
     BreakStmt(yyltype loc) : Stmt(loc) {}
-	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT) {}
+	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT);
 };
 
 class ReturnStmt : public Stmt
@@ -122,7 +126,7 @@ protected:
 
 public:
     ReturnStmt(yyltype loc, Expr* expr);
-	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT) {}
+	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT);
 };
 
 class PrintStmt : public Stmt
@@ -133,7 +137,7 @@ protected:
 public:
     PrintStmt(List<Expr*>* arguments);
     bool isPrintable(Type* type);
-	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT) {}
+	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT);
 };
 
 
