@@ -64,15 +64,21 @@ bool StmtBlock::BuildTree(SymbolTable* symT) {
     blockScope = symT->addScope();
     bool flag = true;
 
-    for (int i = 0; i < decls->NumElements(); i++)
+    for (int i = 0; i < decls->NumElements(); ++i)
         flag = decls->Nth(i)->BuildTree(blockScope) ? flag : false;
 
-    for (int i = 0; i < stmts->NumElements(); i++)
+    for (int i = 0; i < stmts->NumElements(); ++i)
         flag = stmts->Nth(i)->BuildTree(blockScope) ? flag : false;
 
     return flag;
 }
 
+void StmtBlock::Emit(Scoper *scopee, CodeGenerator *codegen, SymTable *symT) {
+	for (int i = 0; i < decls->NumElements(); ++i)
+		decls->Nth(i)->Emit(scopee, codegen, symT);
+	for (int i = 0; i< stmts->NumElements(); ++i)
+		stmts->Nth(i)->Emit(scopee, codegen, symT);
+}
 
 ConditionalStmt::ConditionalStmt(Expr* t, Stmt* b) {
     Assert(t != NULL && b != NULL);
@@ -92,6 +98,18 @@ bool ForStmt::BuildTree(SymbolTable* symT) {
     return body->BuildTree(blockScope);
 }
 
+void ForStmt::Emit(Scoper *scopee, CodeGenerator *codegen, SymTable *symT) {
+	char* endPoint = codegen->NewLabel();
+	char* loopThing = codegen->NewLabel();
+	init->Emit(scopee, codegen, blockScope);
+	codegen->GenLabel(loopThing);
+	test->Emit(scopee, codegen, blockScope);
+	codegen->GenIfZ(test->get->/////////////////////////////////////////////////////////////////////
+	body->Emit(scopee, codegen, blockScope);
+	step->Emit(scopee, codegen, blockScope);
+	codegen->GenGoto(loopThing);
+	codegen->GenLabel(endPoint);
+}
 
 bool WhileStmt::BuildTree(SymbolTable* symT) {
     blockScope = symT->addScope();
@@ -145,7 +163,7 @@ bool Case::BuildTree(SymbolTable* symT) {
     bool flag = true;
 
     caseScope->setLastNode(this);
-    for (int i = 0; i < stmts->NumElements(); i++)
+    for (int i = 0; i < stmts->NumElements(); ++i)
         flag = stmts->Nth(i)->BuildTree(symT) ? flag : false;
 
     return flag;
@@ -160,7 +178,7 @@ SwitchStmt::SwitchStmt(Expr* e, List<Case*>* c) {
 // deprecated
 bool SwitchStmt::BuildTree(SymbolTable* symT) {
     bool flag = true;
-    for (int i = 0; i < cases->NumElements(); i++)
+    for (int i = 0; i < cases->NumElements(); ++i)
         flag = cases->Nth(i)->BuildTree(symT) ? flag : false;
 
     return flag;

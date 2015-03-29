@@ -37,8 +37,13 @@ class Stmt : public Node
 {
 public:
     Stmt() : Node() {}
-    Stmt(yyltype loc) : Node(loc) {}
+    Stmt(yyltype loc) : Node(loc) { frameLoc = NULL;}
     virtual bool BuildTree(SymbolTable* symT) { return true; }
+	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymTable *symT) {}
+	Location* getFrameLoc() { return frameLoc; }
+	
+protected:
+	Location* frameLoc;
 };
 
 class StmtBlock : public Stmt
@@ -51,6 +56,7 @@ protected:
 public:
     StmtBlock(List<VarDecl*>* variableDeclarations, List<Stmt*>* statements);
     virtual bool BuildTree(SymbolTable* symT);
+	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymTable *symT);
 };
 
 
@@ -69,7 +75,7 @@ class LoopStmt : public ConditionalStmt
 {
 public:
     LoopStmt(Expr* testExpr, Stmt* body)
-    : ConditionalStmt(testExpr, body) {}
+    : ConditionalStmt(testExpr, body);
 };
 
 class ForStmt : public LoopStmt
@@ -80,6 +86,7 @@ protected:
 public:
     ForStmt(Expr* init, Expr* test, Expr* step, Stmt* body);
     virtual bool BuildTree(SymbolTable* symT);
+	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymTable *symT) {}
 };
 
 class WhileStmt : public LoopStmt
@@ -87,6 +94,7 @@ class WhileStmt : public LoopStmt
 public:
     WhileStmt(Expr* test, Stmt* body) : LoopStmt(test, body) {}
     virtual bool BuildTree(SymbolTable* symT);
+	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymTable *symT) {}
 };
 
 class IfStmt : public ConditionalStmt
@@ -97,12 +105,14 @@ protected:
 public:
     IfStmt(Expr* test, Stmt* thenBody, Stmt* elseBody);
     virtual bool BuildTree(SymbolTable* symT);
+	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymTable *symT) {}
 };
 
 class BreakStmt : public Stmt
 {
 public:
     BreakStmt(yyltype loc) : Stmt(loc) {}
+	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymTable *symT) {}
 };
 
 class ReturnStmt : public Stmt
@@ -112,6 +122,7 @@ protected:
 
 public:
     ReturnStmt(yyltype loc, Expr* expr);
+	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymTable *symT) {}
 };
 
 class PrintStmt : public Stmt
@@ -122,6 +133,7 @@ protected:
 public:
     PrintStmt(List<Expr*>* arguments);
     bool isPrintable(Type* type);
+	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymTable *symT) {}
 };
 
 
