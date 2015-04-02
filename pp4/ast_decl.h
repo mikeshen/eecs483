@@ -17,13 +17,17 @@
 #include "ast_type.h"
 #include "list.h"
 
- class Identifier;
- class Stmt;
- class ImplementedFunction;
 
- class Decl : public Node
- {
- protected:
+class Type;
+class NamedType;
+class FnDecl;
+class Identifier;
+class Stmt;
+class ImplementedFunction;
+
+class Decl : public Node
+{
+protected:
     Identifier* id;
 
 public:
@@ -31,9 +35,9 @@ public:
     friend std::ostream& operator<<(std::ostream& out, Decl* d) { return out << d->id; }
     virtual bool BuildTree(SymbolTable* symT) { return true; }
     virtual Type* getType() { return NULL; }
+    virtual void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {}
     char* getName() { return id->getName(); }
     Identifier* getIdentifier() { return id; }
-    virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable *symT) {}
 };
 
 class VarDecl : public Decl
@@ -45,7 +49,7 @@ public:
     VarDecl(Identifier* name, Type* type);
     virtual bool BuildTree(SymbolTable* symT);
     virtual Type* getType() { return type; }
-	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable *symT);
+	virtual void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT);
 };
 
 class ClassDecl : public Decl
@@ -58,12 +62,26 @@ protected:
     ClassDecl* parent;
     List<Decl*>* members;
 
+    // new stuff
+    Scoper* classScoper;
+    Hashtable<FnDecl*>* vTable;
+    List<FnDecl*>* emittedMethods;
+    List<VarDecl*>* fields;
+    int numFields;
+    char* classLabel;
+
+
 public:
     ClassDecl(Identifier* name, NamedType* extends,
     List<NamedType*>* implements, List<Decl*>* members);
-    bool FulfillsInterface(char* name);
     virtual bool BuildTree(SymbolTable* symT);
     bool Inherit(SymbolTable* symT);
+    bool FulfillsInterface(char* name);
+    void EmitHelper(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT);
+    virtual void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT);
+    Hashtable<FnDecl*>* getVTable() { return vTable; }
+    List<VarDecl*>* getFields() { return fields; }
+    Scoper* getScoper() { return classScoper; }
 };
 
 class InterfaceDecl : public Decl
@@ -96,30 +114,35 @@ public:
     FnDecl(Identifier* name, Type* returnType, List<VarDecl*>* formals);
     void SetFunctionBody(Stmt* b);
     virtual bool BuildTree(SymbolTable* symT);
-    Type* GetReturnType() { return returnType; }
+    void EmitMethod(ClassDecl* classDecl, Scoper* scoper, CodeGenerator* codegen, SymbolTable* symT);
+    virtual void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT);
+
     Type* GetType() { return returnType; }
     List<VarDecl*>* GetFormals() { return formals; }
-    virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable *symT);
-    void EmitHelper(ClassDecl* classDecl, Scoper *scoper, CodeGenerator *codegen, SymbolTable *symT);
+
+    const char* getMethodLabel() { return methodLabel; }
+    void setMethodLabel(char* label);
+    const char* getFunctionLabel() { return functionLabel; }
+    bool isMethod() { return methodLabel != NULL; }
+    int getOffset() { return offset; }
+    void setOffset(int off) { offset = off; }
+
 };
 
 
-class ImplementedFunction {
-public:
-    ImplementedFunction(FnDecl* p, NamedType* type) {
-        prototype = p;
-        intf_type = type;
-        implemented = false;
-    }
-    FnDecl* getPrototype() { return prototype; }
-    NamedType* getIntfType() { return intf_type; }
-    bool isImplemented() { return implemented; }
-    void setImplemented(bool implemented) { implemented = implemented; }
-
+class ImplementedFunction
+{
 protected:
     FnDecl* prototype;
     NamedType* intf_type;
     bool implemented;
+
+public:
+    ImplementedFunction(FnDecl* p, NamedType* type) : prototype(p), intf_type(type), implemented(false) {}
+    FnDecl* getPrototype() { return prototype; }
+    NamedType* getIntfType() { return intf_type; }
+    bool isImplemented() { return implemented; }
+    void setImplemented(bool imp) { implemented = imp; }
 };
 
 #endif

@@ -33,7 +33,9 @@ void VarDecl::Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable *symT) {
 	s->setLoc(l);
 }
 
-ClassDecl::ClassDecl(Identifier* n, NamedType* ex, List<NamedType*>* imp, List<Decl*>* m) : Decl(n) {
+ClassDecl::ClassDecl(Identifier* n, NamedType* ex, List<NamedType*>* imp, List<Decl*>* m) : Decl(n),
+    classScope(NULL), implmentedFunctions(NULL), parent(NULL), classScoper(NULL),
+    vTable(NULL), emittedMethods(NULL), fields(NULL), numFields(0) {
     // extends can be NULL, impl & mem may be empty lists but cannot be NULL
     Assert(n != NULL && imp != NULL && m != NULL);
     extends = ex;
@@ -64,6 +66,58 @@ bool ClassDecl::FulfillsInterface(char *name) {
     if (strcmp(name, implements->Nth(i)->getName()) == 0)
       return true;
   return false;
+}
+
+void ClassDecl::EmitHelper(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
+    if (classScoper != NULL) return;
+
+    // recursve emit
+    classLabel = codegen->NewLabel();
+    vTable = new Hashtable<FnDecl*>;
+    fields = new List<VarDecl*>;
+
+    if (!extends)
+        classScoper = new Scoper(cRelative, UP);
+    else {
+        parent->EmitHelper(scopee, codegen, symT);
+
+        List<VarDecl*>* parentFields = parent->getFields();
+        for (int i = 0; i < parentFields->NumElements(); ++i)
+            fields->Append(parentFields->Nth(i));
+        auto i = (parent->getVTable())->GetIterator();
+        FnDecl* fnDecl;
+        while ((fnDecl = i.GetNextValue()) != NULL)
+            vTable->Enter(fnDecl->getName(), fnDecl);
+        classScoper = new Scoper(parent->getScoper());
+    }
+
+    emittedMethods = new List<FnDecl*>;
+    for (int i = 0; i < members->NumElements(); ++i) {
+        FnDecl* tempMethod = dynamic_cast<FnDecl*>(members->Nth(i));
+        if (tempMethod == 0) { // is field
+            VarDecl* tempField = dynamic_cast<VarDecl*>(members->Nth(i));
+            fields->Append(tempField);
+            tempField->Emit(classScoper, codegen, symT);
+        }
+        else {
+            vTable->Enter(tempMethod->getName(), tempMethod);
+            tempMethod->setMethodLabel(classLabel);
+            emittedMethods->Append(tempMethod);
+        }
+    }
+}
+
+void ClassDecl::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
+    for (int i = 0; i < emittedMethods->NumElements(); ++i)
+        emittedMethods->Nth(i)->EmitMethod(this, classScoper, codegen, symT);
+
+    numFields = fields->NumElements();
+    List<const char*>* methodLabels = new List<const char*>;
+    auto i = vTable->GetIterator();
+    FnDecl* fnDecl;
+    while ((fnDecl = i.GetNextValue()) != NULL)
+        methodLabels->Append(fnDecl->getMethodLabel());
+    codegen->GenVTable(classLabel, methodLabels);
 }
 
 bool ClassDecl::Inherit(SymbolTable *symT) {
@@ -98,7 +152,7 @@ bool ClassDecl::Inherit(SymbolTable *symT) {
   return flag;
 }
 
-InterfaceDecl::InterfaceDecl(Identifier* n, List<Decl*>* m) : Decl(n) {
+InterfaceDecl::InterfaceDecl(Identifier* n, List<Decl*>* m) : Decl(n), interfaceScope(NULL) {
     Assert(n != NULL && m != NULL);
     (members=m)->SetParentAll(this);
 }
@@ -121,11 +175,17 @@ bool InterfaceDecl::BuildTree(SymbolTable* symT) {
     return flag;
 }
 
-FnDecl::FnDecl(Identifier* n, Type* r, List<VarDecl*>* d) : Decl(n) {
+FnDecl::FnDecl(Identifier* n, Type* r, List<VarDecl*>* d) : Decl(n), fnScope(NULL),
+               paramScoper(NULL), bodyScoper(NULL), methodLabel(NULL),
+               functionLabel(NULL), offset(0) {
     Assert(n != NULL && r!= NULL && d != NULL);
     (returnType=r)->SetParent(this);
     (formals=d)->SetParentAll(this);
     body = NULL;
+}
+
+void FnDecl::SetFunctionBody(Stmt* b) {
+    (body=b)->SetParent(this);
 }
 
 bool FnDecl::BuildTree(SymbolTable* symT) {
@@ -147,24 +207,7 @@ bool FnDecl::BuildTree(SymbolTable* symT) {
     return flag;
 }
 
-void FnDecl::Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable *symT) {
-    Symbol *s = NULL;
-    BeginFunc *beginFn;
-    paramScoper = new Scoper(fpRelative, UP);
-    bodyScoper = new Scoper(fpRelative, DOWN);
-
-    functionLabel = codegen->NewLabel();
-    codegen->GenLabel(functionLabel);
-    beginFn = codegen->GenBeginFunc();
-    for (int i = 0; i < formals->NumElements(); ++i)
-        formals->Nth(i)->Emit(paramScoper, codegen, fnScope);
-    body->Emit(bodyScoper, codegen, fnScope);
-    beginFn->SetFrameSize(bodyScoper->GetSize());
-    codegen->GenEndFunc();
-
-}
-
-void FnDecl::EmitHelper(ClassDecl* classDecl, Scoper* scoper,
+void FnDecl::EmitMethod(ClassDecl* classDecl, Scoper* scoper,
                         CodeGenerator* codegen, SymbolTable* symT) {
     BeginFunc* beginFn;
     paramScoper = new Scoper(fpRelative, UP);
@@ -182,7 +225,24 @@ void FnDecl::EmitHelper(ClassDecl* classDecl, Scoper* scoper,
     codegen->GenEndFunc();
 }
 
-void FnDecl::SetFunctionBody(Stmt* b) {
-    (body=b)->SetParent(this);
+void FnDecl::Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable *symT) {
+    BeginFunc *beginFn;
+    paramScoper = new Scoper(fpRelative, UP);
+    bodyScoper = new Scoper(fpRelative, DOWN);
+
+    functionLabel = codegen->NewLabel();
+    codegen->GenLabel(functionLabel);
+    beginFn = codegen->GenBeginFunc();
+    for (int i = 0; i < formals->NumElements(); ++i)
+        formals->Nth(i)->Emit(paramScoper, codegen, fnScope);
+    body->Emit(bodyScoper, codegen, fnScope);
+    beginFn->SetFrameSize(bodyScoper->GetSize());
+    codegen->GenEndFunc();
 }
 
+void FnDecl::setMethodLabel(char *label) {
+    int len = strlen(label) + strlen(getName()) + 2;
+    methodLabel = (char*) malloc(len);
+    sprintf(methodLabel, "%s.%s", label, getName());
+    methodLabel[len - 1] = '\0';
+}
