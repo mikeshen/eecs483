@@ -27,8 +27,11 @@ class Expr : public Stmt
 public:
     Expr(yyltype loc) : Stmt(loc) {}
     Expr() : Stmt() {}
+    virtual Type* getEvalType(SymbolTable* symT) { return Type::stringType; }
+    Location* getFramePosition() { return framePosition; }
 
 protected:
+    Location* framePosition;
 };
 
 /* This node type is used for those places where an expression is optional.
@@ -38,6 +41,7 @@ protected:
  {
  public:
     EmptyExpr();
+    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) { framePosition = NULL; }
 };
 
 class IntConstant : public Expr
@@ -47,6 +51,8 @@ protected:
 
 public:
     IntConstant(yyltype loc, int val);
+    virtual Type* getEvalType(SymbolTable* symT) { return Type::intType; }
+    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) { framePosition = codegen->GenLoadConstant(value, scopee); }
 };
 
 class DoubleConstant : public Expr
@@ -65,6 +71,8 @@ protected:
 
 public:
     BoolConstant(yyltype loc, bool val);
+    virtual Type* getEvalType(SymbolTable* symT) { return Type::boolType; }
+    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) { framePosition = codegen->GenLoadConstant(value, scopee); }
 };
 
 class StringConstant : public Expr
@@ -74,12 +82,14 @@ protected:
 
 public:
     StringConstant(yyltype loc, const char* val);
+    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) { framePosition = codegen->GenLoadConstant(value, scopee); }
 };
 
 class NullConstant: public Expr
 {
 public:
     NullConstant(yyltype loc);
+    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) { framePosition = codegen->GenLoadConstant(0, scopee); }
 };
 
 class Operator : public Node
@@ -90,6 +100,8 @@ protected:
 public:
     Operator(yyltype loc, const char* tok);
     friend std::ostream& operator<<(std::ostream& out, Operator* o) { return out << o->tokenString; }
+    char* getTokenString() { return tokenString; }
+    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) { }
 };
 
 class CompoundExpr : public Expr
@@ -108,18 +120,24 @@ class ArithmeticExpr : public CompoundExpr
 public:
     ArithmeticExpr(Expr* lhs, Operator* op, Expr* rhs) : CompoundExpr(lhs,op,rhs) {}
     ArithmeticExpr(Operator* op, Expr* rhs) : CompoundExpr(op,rhs) {}
+    virtual Type* getEvalType(SymbolTable* symT) { return Type::intType; }
+    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT);
 };
 
 class RelationalExpr : public CompoundExpr
 {
 public:
     RelationalExpr(Expr* lhs, Operator* op, Expr* rhs) : CompoundExpr(lhs,op,rhs) {}
+    virtual Type* getEvalType(SymbolTable* symT) { return Type::boolType; }
+    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT);
 };
 
 class EqualityExpr : public CompoundExpr
 {
 public:
     EqualityExpr(Expr* lhs, Operator* op, Expr* rhs) : CompoundExpr(lhs,op,rhs) {}
+    virtual Type* getEvalType(SymbolTable* symT) { return Type::boolType; }
+    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT);
 };
 
 class LogicalExpr : public CompoundExpr
@@ -127,12 +145,16 @@ class LogicalExpr : public CompoundExpr
 public:
     LogicalExpr(Expr* lhs, Operator* op, Expr* rhs) : CompoundExpr(lhs,op,rhs) {}
     LogicalExpr(Operator* op, Expr* rhs) : CompoundExpr(op,rhs) {}
+    virtual Type* getEvalType(SymbolTable* symT) { return Type::boolType; }
+    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT){}//////////
 };
 
 class AssignExpr : public CompoundExpr
 {
 public:
     AssignExpr(Expr* lhs, Operator* op, Expr* rhs) : CompoundExpr(lhs,op,rhs) {}
+    virtual Type* getEvalType(SymbolTable* symT) { return left->getEvalType(symT); }
+    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT){}///////////
 };
 
 class LValue : public Expr
@@ -145,6 +167,11 @@ class This : public Expr
 {
 public:
     This(yyltype loc) : Expr(loc) {}
+    virtual Type* getEvalType(SymbolTable* symT) { 
+        ClassDecl* current = static_cast<ClassDecl*>(symT->getThisClass());
+        return (new NamedType(current->getIdentifier()));
+    }
+    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {}////////////////
 };
 
 class ArrayAccess : public LValue
@@ -154,6 +181,8 @@ protected:
 
 public:
     ArrayAccess(yyltype loc, Expr* base, Expr* subscript);
+    virtual Type* getEvalType(SymbolTable* symT) { return base->getEvalType(symT); }
+    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {}/////////////////
 };
 
 /* Note that field access is used both for qualified names
@@ -169,6 +198,8 @@ public:
 
 public:
     FieldAccess(Expr* base, Identifier* field); //ok to pass NULL base
+    virtual Type* getEvalType(SymbolTable* symT);
+    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) { }///////////////////
 };
 
 /* Like field access, call is used both for qualified base.field()
@@ -183,7 +214,9 @@ public:
     List<Expr*>* actuals;
 
 public:
-    Call(yyltype loc, Expr* base, Identifier* field, List<Expr*>* args);
+    Call(yyltype loc, Expr* base, Identifier* field, List<Expr*>* args); 
+    virtual Type* getEvalType(SymbolTable* symT);
+    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {}///////////////////
 };
 
 class NewExpr : public Expr
@@ -193,6 +226,7 @@ protected:
 
 public:
     NewExpr(yyltype loc, NamedType* clsType);
+    Type* getEvalType(SymbolTable* symT) { return cType; }
 };
 
 class NewArrayExpr : public Expr
@@ -203,18 +237,21 @@ protected:
 
 public:
     NewArrayExpr(yyltype loc, Expr* sizeExpr, Type* elemType);
+    Type* getEvalType(SymbolTable* symT) { return (new ArrayType(*location, elemType)); }
 };
 
 class ReadIntegerExpr : public Expr
 {
 public:
     ReadIntegerExpr(yyltype loc);
+    virtual Type* getEvalType(SymbolTable* symT) { return Type::intType; }
 };
 
 class ReadLineExpr : public Expr
 {
 public:
     ReadLineExpr(yyltype loc);
+    virtual Type* getEvalType(SymbolTable* symT) { return Type::stringType; }
 };
 
 class PostfixExpr : public Expr

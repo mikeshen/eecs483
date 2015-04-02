@@ -9,6 +9,7 @@
 #include "errors.h"
 
 
+
 EmptyExpr::EmptyExpr() {
 }
 
@@ -52,6 +53,28 @@ CompoundExpr::CompoundExpr(Operator *o, Expr *r)
     (right=r)->SetParent(this);
 }
 
+void ArithmeticExpr::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
+    right->Emit(scopee, codegen, symT);
+    if(!left)
+        left = new IntConstant({0,0,0,0,0, nullptr }, 0);
+    left->Emit(scopee, codegen, symT);
+    framePosition = codegen->GenBinaryOp(op->getTokenString(), left->getFramePosition(), right->getFramePosition(), scopee);
+}
+
+void RelationalExpr::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
+    left->Emit(scopee, codegen, symT);
+    right->Emit(scopee, codegen, symT);
+    framePosition = codegen->GenBinaryOp(op->getTokenString(), left->getFramePosition(), right->getFramePosition(), scopee);
+}
+
+void EqualityExpr::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
+    left->Emit(scopee, codegen, symT);
+    right->Emit(scopee, codegen, symT);
+    if(left->getEvalType(symT)->IsEquivalentTo(Type::stringType) && right->getEvalType(symT)->IsEquivalentTo(Type::stringType))
+        framePosition = codegen->GenBuiltInCall(StringEqual, scopee, left->getFramePosition(), right->getFramePosition());
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// != for string
+    framePosition = codegen->GenBinaryOp(op->getTokenString(), left->getFramePosition(), right->getFramePosition(), scopee);
+}
 
 ArrayAccess::ArrayAccess(yyltype loc, Expr *b, Expr *s) : LValue(loc) {
         (base=b)->SetParent(this);
@@ -66,6 +89,18 @@ FieldAccess::FieldAccess(Expr *b, Identifier *f)
     (field=f)->SetParent(this);
 }
 
+Type* FieldAccess::getEvalType(SymbolTable* symT) {
+    if(!base) {
+        NamedType* baseType = dynamic_cast<NamedType*>(base->getEvalType(symT));
+        Symbol* element = symT->findClassField(baseType->getName(), field->getName(), VARIABLE);
+        Decl *fieldDecl = static_cast<Decl*>(element->getNode());
+        return fieldDecl->getType();
+    }
+    Symbol* sym = symT->find(field->getName(), VARIABLE);
+    return (static_cast<VarDecl*>(sym->getNode()))->getType();
+}
+
+
 
 Call::Call(yyltype loc, Expr *b, Identifier *f, List<Expr*> *a) : Expr(loc)  {
         Assert(f != NULL && a != NULL); // b can be be NULL (just means no explicit base)
@@ -73,6 +108,19 @@ Call::Call(yyltype loc, Expr *b, Identifier *f, List<Expr*> *a) : Expr(loc)  {
         if (base) base->SetParent(this);
         (field=f)->SetParent(this);
         (actuals=a)->SetParentAll(this);
+}
+
+Type* Call::getEvalType(SymbolTable* symT) {
+    if(!base) {
+        Symbol* sym = symT->find(field->getName(), FUNCTION);
+        return (dynamic_cast<FnDecl*>(sym->getNode()))->GetReturnType();
+    }
+    if (dynamic_cast<ArrayType*>(base->getEvalType(symT)) != 0 && strcmp(field->getName(), "length") == 0)
+        return Type::intType;
+
+    Type* basetype = base->getEvalType(symT);
+    Symbol* sym = symT->findClassField(basetype->getName(), field->getName(), FUNCTION);
+    return (dynamic_cast<FnDecl*>(sym->getNode()))->GetReturnType();
 }
 
 NewExpr::NewExpr(yyltype loc, NamedType *c) : Expr(loc) {

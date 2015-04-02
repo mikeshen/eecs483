@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include "list.h"
 #include "tac.h"
+#include "scoper.h"
  
 
               // These codes are used to identify the built-in functions
@@ -51,7 +52,7 @@ class CodeGenerator {
 
          // Creates and returns a Location for a new uniquely named
          // temp variable. Does not generate any Tac instructions
-    Location *GenTempVariable();
+    Location *GenTempVariable(Scoper* s);
 
          // Generates Tac instructions to load a constant value. Creates
          // a new temp var to hold the result. The constant 
@@ -62,9 +63,9 @@ class CodeGenerator {
          // The LoadLabel method loads a label into a temporary.
          // Each of the methods returns a Location for the temp var
          // where the constant was loaded.
-    Location *GenLoadConstant(int value);
-    Location *GenLoadConstant(const char *str);
-    Location *GenLoadLabel(const char *label);
+    Location *GenLoadConstant(int value, Scoper* s);
+    Location *GenLoadConstant(const char *str, Scoper* s);
+    Location *GenLoadLabel(const char *label, Scoper* s);
 
 
          // Generates Tac instructions to copy value from one location to another
@@ -84,14 +85,14 @@ class CodeGenerator {
          // temporary variable where the result was stored. The optional
          // offset argument can be used to offset the addr by a positive or
          // negative number of bytes. If not given, 0 is assumed.
-    Location *GenLoad(Location *addr, int offset = 0);
+    Location *GenLoad(Location *addr, Scoper* s, int offset = 0);
 
     
          // Generates Tac instructions to perform one of the binary ops
          // identified by string name, such as "+" or "==".  Returns a
          // Location object for the new temporary where the result
          // was stored.
-    Location *GenBinaryOp(const char *opName, Location *op1, Location *op2);
+    Location *GenBinaryOp(const char *opName, Location *op1, Location *op2, Scoper* s);
 
     
          // Generates the Tac instruction for pushing a single
@@ -111,14 +112,14 @@ class CodeGenerator {
          // true,  a new temp var is created, the fn result is stored 
          // there and that Location is returned. If false, no temp is
          // created and NULL is returned
-    Location *GenLCall(const char *label, bool fnHasReturnValue);
+    Location *GenLCall(const char *label, bool fnHasReturnValue, Scoper* s);
 
          // Generates the Tac instructions for ACall, a jump to an
          // address computed at runtime. Works similarly to LCall,
          // described above, in terms of return type.
          // The fnAddr Location is expected to hold the address of
          // the code to jump to (typically it was read from the vtable)
-    Location *GenACall(Location *fnAddr, bool fnHasReturnValue);
+    Location *GenACall(Location *fnAddr, bool fnHasReturnValue, Scoper* s);
 
          // Generates the Tac instructions to call one of
          // the built-in functions (Read, Print, Alloc, etc.) Although
@@ -129,7 +130,7 @@ class CodeGenerator {
          // for the new temp var holding the result.  For those
          // built-ins with no return value (Print/Halt), no temporary
          // is created and NULL is returned.
-    Location *GenBuiltInCall(BuiltIn b, Location *arg1 = NULL, Location *arg2 = NULL);
+    Location *GenBuiltInCall(BuiltIn b, Scoper* s, Location *arg1 = NULL, Location *arg2 = NULL);
 
     
          // These methods generate the Tac instructions for various

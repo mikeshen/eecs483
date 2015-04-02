@@ -50,6 +50,12 @@ void Program::Emit() {
     }
     // TODO incomplete function
 
+    for (int i = 0; i < decls->NumElements(); i++) {
+      FnDecl *fnDecl = dynamic_cast<FnDecl*>(decls->Nth(i));
+      if (fnDecl != 0)
+        fnDecl->Emit(scoper, codegen, programScope);
+    }
+
 }
 
 StmtBlock::StmtBlock(List<VarDecl*>* d, List<Stmt*>* s) {
