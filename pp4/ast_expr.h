@@ -32,7 +32,7 @@ public:
 
 protected:
     Location* framePosition;
-    Location* reference = NULL;
+    bool deref = false;
 };
 
 /* This node type is used for those places where an expression is optional.
@@ -200,7 +200,7 @@ public:
 public:
     FieldAccess(Expr* base, Identifier* field); //ok to pass NULL base
     virtual Type* getEvalType(SymbolTable* symT);
-    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) { }///////////////////
+    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT);
 };
 
 /* Like field access, call is used both for qualified base.field()
@@ -240,6 +240,7 @@ protected:
 public:
     NewArrayExpr(yyltype loc, Expr* sizeExpr, Type* elemType);
     Type* getEvalType(SymbolTable* symT) { return (new ArrayType(*location, elemType)); }
+    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {}
 };
 
 class ReadIntegerExpr : public Expr

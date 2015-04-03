@@ -71,11 +71,11 @@ bool ClassDecl::FulfillsInterface(char *name) {
 void ClassDecl::EmitHelper(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
     if (classScoper != NULL) return;
 
-    // recursve emit
     classLabel = codegen->NewLabel();
     vTable = new Hashtable<FnDecl*>;
     fields = new List<VarDecl*>;
 
+    // recursve emit
     if (!extends)
         classScoper = new Scoper(cRelative, UP);
     else {

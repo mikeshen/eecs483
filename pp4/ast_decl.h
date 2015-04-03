@@ -70,7 +70,6 @@ protected:
     int numFields;
     char* classLabel;
 
-
 public:
     ClassDecl(Identifier* name, NamedType* extends,
     List<NamedType*>* implements, List<Decl*>* members);
@@ -117,7 +116,7 @@ public:
     void EmitMethod(ClassDecl* classDecl, Scoper* scoper, CodeGenerator* codegen, SymbolTable* symT);
     virtual void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT);
 
-    Type* GetType() { return returnType; }
+    virtual Type* getType() { return returnType; }
     List<VarDecl*>* GetFormals() { return formals; }
 
     const char* getMethodLabel() { return methodLabel; }

@@ -92,7 +92,7 @@ void LogicalExpr::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT
 void AssignExpr::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
     right->Emit(scopee, codegen, symT);
     left->Emit(scopee, codegen, symT);
-    if(dynamic_cast<LValue*>(left) != 0)
+    if(deref)
         codegen->GenStore(left->getFramePosition(), right->getFramePosition(), 0);
     else
         codegen->GenAssign(left->getFramePosition(), right->getFramePosition());////////////I have no idea when this is actually used
@@ -120,14 +120,14 @@ void ArrayAccess::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT
     Location* one = codegen->GenLoadConstant(1, scopee);
     Location* temp = codegen->GenBinaryOp("+", subscript->getFramePosition(), one, scopee);
     Location* offset = codegen->GenBinaryOp("*", temp, subscript->getFramePosition(), scopee);
-    reference = codegen->GenBinaryOp("+", base->getFramePosition(), offset, scopee);
-    framePosition = codegen->GenLoad(reference, scopee, 0);
+    framePosition = codegen->GenLoad(codegen->GenBinaryOp("+", base->getFramePosition(), offset, scopee), scopee, 0);
 }
 
 
 ArrayAccess::ArrayAccess(yyltype loc, Expr *b, Expr *s) : LValue(loc) {
         (base=b)->SetParent(this);
         (subscript=s)->SetParent(this);
+        deref = true;
 }
 
 FieldAccess::FieldAccess(Expr *b, Identifier *f)
@@ -149,7 +149,31 @@ Type* FieldAccess::getEvalType(SymbolTable* symT) {
     return (static_cast<VarDecl*>(sym->getNode()))->getType();
 }
 
+void FieldAccess::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
+    if(base) {
+        deref = true;
+        base->Emit(scopee, codegen, symT);
+        Symbol* klass = symT->find(base->getEvalType(symT)->getName(), CLASS);
+        Symbol* fieldSym = klass->getEnv()->find(field->getName(), VARIABLE);
+        Location* loc = fieldSym->getLoc();
+        Location* offset = codegen->GenLoadConstant(loc->GetOffset(), scopee);
+        framePosition = codegen->GenLoad(codegen->GenBinaryOp("+", loc, offset, scopee), scopee, 0);
+        return;
+    }
 
+    Symbol* sym = symT->find(field->getName(), VARIABLE);
+    Location* loc = sym->getLoc();
+    /*
+    if(loc->getSegment() != classRelative) {
+        framePosition = loc
+        return;
+    }
+    */
+    deref = true;
+    Symbol* temp = symT->find("this", VARIABLE);
+    Location* offset = codegen->GenLoadConstant(loc->GetOffset(), scopee);
+    framePosition = codegen->GenLoad(codegen->GenBinaryOp("+", temp->getLoc(), offset, scopee), scopee, 0);
+}
 
 Call::Call(yyltype loc, Expr *b, Identifier *f, List<Expr*> *a) : Expr(loc)  {
         Assert(f != NULL && a != NULL); // b can be be NULL (just means no explicit base)
@@ -162,14 +186,14 @@ Call::Call(yyltype loc, Expr *b, Identifier *f, List<Expr*> *a) : Expr(loc)  {
 Type* Call::getEvalType(SymbolTable* symT) {
     if(!base) {
         Symbol* sym = symT->find(field->getName(), FUNCTION);
-        return (dynamic_cast<FnDecl*>(sym->getNode()))->GetType();
+        return (dynamic_cast<FnDecl*>(sym->getNode()))->getType();
     }
     if (dynamic_cast<ArrayType*>(base->getEvalType(symT)) != 0 && strcmp(field->getName(), "length") == 0)
         return Type::intType;
 
     Type* basetype = base->getEvalType(symT);
     Symbol* sym = symT->findClassField(basetype->getName(), field->getName(), FUNCTION);
-    return (dynamic_cast<FnDecl*>(sym->getNode()))->GetType();
+    return (dynamic_cast<FnDecl*>(sym->getNode()))->getType();
 }
 
 NewExpr::NewExpr(yyltype loc, NamedType *c) : Expr(loc) {
@@ -195,6 +219,14 @@ NewArrayExpr::NewArrayExpr(yyltype loc, Expr *sz, Type *et) : Expr(loc) {
     (elemType=et)->SetParent(this);
 }
 
+/*
+void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
+    ClassDecl* klass = dynamic_cast<ClassDecl*>((symT->find(cType->getName(), CLASS);)->getNode());
+    Location* four = codegen->GenLoadConstant(4, scopee);
+    Location* temp = codegen->GenLoadConstant(klass->NumFields)
+    Location* size = codegen->GenBinaryOp("*", )
+}
+*/
 
 ReadIntegerExpr::ReadIntegerExpr(yyltype loc) : Expr(loc) {}
 
