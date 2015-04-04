@@ -150,6 +150,7 @@ Type* FieldAccess::getEvalType(SymbolTable* symT) {
 }
 
 void FieldAccess::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
+    /*
     if(base) {
         deref = true;
         base->Emit(scopee, codegen, symT);
@@ -163,16 +164,45 @@ void FieldAccess::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT
 
     Symbol* sym = symT->find(field->getName(), VARIABLE);
     Location* loc = sym->getLoc();
-    /*
+    
     if(loc->getSegment() != classRelative) {
         framePosition = loc
         return;
     }
-    */
+    
     deref = true;
     Symbol* temp = symT->find("this", VARIABLE);
     Location* offset = codegen->GenLoadConstant(loc->GetOffset(), scopee);
     framePosition = codegen->GenLoad(codegen->GenBinaryOp("+", temp->getLoc(), offset, scopee), scopee, 0);
+    */
+
+
+    Location* loc = NULL;
+    Location* temp2 = NULL;
+
+    if(base) {
+        base->Emit(scopee, codegen, symT);
+        Symbol* klass = symT->find(base->getEvalType(symT)->getName(), CLASS);
+        Symbol* fieldSym = klass->getEnv()->find(field->getName(), VARIABLE);
+        loc = fieldSym->getLoc();
+        temp2 = loc;
+    }
+    else {
+        Symbol* sym = symT->find(field->getName(), VARIABLE);
+        Symbol* temp = symT->find("this", VARIABLE);
+        loc = sym->getLoc();
+        /*
+        if(loc->getSegment() != classRelative) {
+            framePosition = loc
+            return;
+        }
+        */
+        temp2 = temp->getLoc();
+    }
+
+    deref = true;
+    Location* offset = codegen->GenLoadConstant(loc->GetOffset(), scopee);
+    framePosition = codegen->GenLoad(codegen->GenBinaryOp("+", temp2, offset, scopee), scopee, 0);
 }
 
 Call::Call(yyltype loc, Expr *b, Identifier *f, List<Expr*> *a) : Expr(loc)  {
@@ -201,17 +231,15 @@ NewExpr::NewExpr(yyltype loc, NamedType *c) : Expr(loc) {
     (cType=c)->SetParent(this);
 }
 
-/*
+
 void NewExpr::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
     Location* four = codegen->GenLoadConstant(4, scopee);
-    ClassDecl* class_decl = dynamic_cast<ClassDecl*>((symT->find(cType->getName(), CLASS))->getNode());
-    Location* classSize = codegen->GenBinaryOp("*", codegen->GenLoadConstant(falloc, class_decl->NumFields() + 1), four, scopee);
-    framePosition = codegen->GenBuiltInCall(falloc, Alloc, classSize, NULL);
-
-    codegen->GenStore(framePosition, codegen->GenLoadLabel(falloc, class_decl->GetClassLabel()), 0);
-
+    ClassDecl* classDecl = dynamic_cast<ClassDecl*>((symT->find(cType->getName(), CLASS))->getNode());
+    Location* classSize = codegen->GenBinaryOp("*", codegen->GenLoadConstant(classDecl->getNumFields() + 1, scopee), four, scopee);
+    framePosition = codegen->GenBuiltInCall(Alloc, scopee, classSize, NULL);
+    codegen->GenStore(framePosition, codegen->GenLoadLabel(classDecl->getClassLabel(), scopee), 0);
 }
-*/
+
 
 NewArrayExpr::NewArrayExpr(yyltype loc, Expr *sz, Type *et) : Expr(loc) {
     Assert(sz != NULL && et != NULL);
@@ -219,14 +247,21 @@ NewArrayExpr::NewArrayExpr(yyltype loc, Expr *sz, Type *et) : Expr(loc) {
     (elemType=et)->SetParent(this);
 }
 
-/*
-void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
-    ClassDecl* klass = dynamic_cast<ClassDecl*>((symT->find(cType->getName(), CLASS);)->getNode());
+
+void NewArrayExpr::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
+    size->Emit(scopee, codegen, symT);
+    Location* zero = codegen->GenLoadConstant(0, scopee);
     Location* four = codegen->GenLoadConstant(4, scopee);
-    Location* temp = codegen->GenLoadConstant(klass->NumFields)
-    Location* size = codegen->GenBinaryOp("*", )
+    Location* one = codegen->GenLoadConstant(1, scopee);
+    Location* sizeCheck = codegen->GenBinaryOp("=>", zero, size->getFramePosition(), scopee);
+    Location* arrayDimension = codegen->GenBinaryOp("*", four, codegen->GenBinaryOp("+", one, size->getFramePosition(), scopee), scopee);
+    char* endPoint = codegen->NewLabel();
+    codegen->GenIfZ(sizeCheck, endPoint);
+    codegen->GenLabel(endPoint);
+    framePosition = codegen->GenBuiltInCall(Alloc, scopee, arrayDimension, NULL);
+    codegen->GenStore(framePosition, size->getFramePosition(), 0);
 }
-*/
+
 
 ReadIntegerExpr::ReadIntegerExpr(yyltype loc) : Expr(loc) {}
 
