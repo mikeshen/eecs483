@@ -238,33 +238,60 @@ int Call::EmitParams(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) 
 }
 
 void Call::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
-    Symbol* symbol = NULL;
+    Symbol* functionSymbol = NULL;
     FnDecl* fnDecl = NULL;
     bool isNonVoid = true;
     int numParams = 0;
-
-    symbol = symT->find(field->getName(), FUNCTION);
-    fnDecl = dynamic_cast<FnDecl*>(symbol->getNode());
-
-    if (fnDecl->getType()->IsEquivalentTo(Type::voidType))
-        isNonVoid = false;
-    if (!fnDecl->isMethod()) {
-        numParams += EmitParams(scopee, codegen, symT);
-        char* functionLabel = codegen->NewLabel();
-        framePosition = codegen->GenLCall(functionLabel, isNonVoid, scopee);
-        codegen->GenPopParams(numParams * 4);
-        return;
-    }
-
     int offset = 0;
-    Location* objectLocation = NULL;
+    Location* objectPosition = NULL;
     Location* methodAddress = NULL;
 
-    Symbol* thisSymbol = symT->find(strdup("this"), VARIABLE);
-    objectLocation = thisSymbol->getLoc();
-    offset = fnDecl->getOffset();
+    if (!base) {
+        functionSymbol = symT->find(field->getName(), FUNCTION);
+        fnDecl = dynamic_cast<FnDecl*>(functionSymbol->getNode());
+
+        if (fnDecl->getType()->IsEquivalentTo(Type::voidType))
+            isNonVoid = false;
+        if (!fnDecl->isMethod()) {
+            numParams += EmitParams(scopee, codegen, symT);
+            char* functionLabel = codegen->NewLabel();
+            framePosition = codegen->GenLCall(functionLabel, isNonVoid, scopee);
+            codegen->GenPopParams(numParams * 4);
+            return;
+        }
 
 
+        Symbol* thisSymbol = symT->find(strdup("this"), VARIABLE);
+        objectPosition = thisSymbol->getLoc();
+        offset = fnDecl->getOffset();
+        methodAddress = codegen->GenLoad(codegen->GenLoad(thisSymbol->getLoc(), scopee, 0),
+                                         scopee, offset * 4);
+    }
+    else {
+        base->Emit(scopee, codegen, symT);
+        if (dynamic_cast<ArrayType*>(base->getEvalType(symT)) != 0 &&
+            strcmp(field->getName(), "length") == 0) {
+            framePosition = codegen->GenLoad(base->getFramePosition(), scopee, 0);
+            return;
+        }
+
+        Symbol* classSymbol = symT->find(base->getEvalType(symT)->getName(), CLASS);
+        functionSymbol = classSymbol->getEnv()->find(field->getName(), FUNCTION);
+        fnDecl = dynamic_cast<FnDecl*>(functionSymbol->getNode());
+        if (fnDecl->getType()->IsEquivalentTo(Type::voidType))
+            isNonVoid = false;
+
+        objectPosition = base->getFramePosition();
+        offset = fnDecl->getOffset();
+        methodAddress = codegen->GenLoad(codegen->GenLoad(base->getFramePosition(), scopee, 0),
+                                         scopee, offset * 4);
+    }
+
+    numParams += EmitParams(scopee, codegen, symT);
+    ++numParams;
+    codegen->GenPushParam(objectPosition);
+    framePosition = codegen->GenACall(methodAddress, isNonVoid, scopee);
+    codegen->GenPopParams(numParams * 4);
 }
 
 NewExpr::NewExpr(yyltype loc, NamedType *c) : Expr(loc) {
