@@ -217,7 +217,8 @@ public:
 public:
     Call(yyltype loc, Expr* base, Identifier* field, List<Expr*>* args);
     virtual Type* getEvalType(SymbolTable* symT);
-    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {}///////////////////
+    int EmitParams(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT);
+    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT);
 };
 
 class NewExpr : public Expr

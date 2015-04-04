@@ -105,6 +105,11 @@ void ClassDecl::EmitHelper(Scoper* scopee, CodeGenerator* codegen, SymbolTable* 
             emittedMethods->Append(tempMethod);
         }
     }
+    auto i = vTable->GetIterator();
+    int count = 0;
+    FnDecl* tempMethod;
+    while ((tempMethod = i.GetNextValue()) != NULL)
+        tempMethod->setOffset(count++);
 }
 
 void ClassDecl::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {

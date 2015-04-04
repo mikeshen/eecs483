@@ -117,7 +117,7 @@ public:
     virtual void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT);
 
     virtual Type* getType() { return returnType; }
-    List<VarDecl*>* GetFormals() { return formals; }
+    List<VarDecl*>* getFormals() { return formals; }
 
     const char* getMethodLabel() { return methodLabel; }
     void setMethodLabel(char* label);
@@ -127,7 +127,6 @@ public:
     void setOffset(int off) { offset = off; }
 
 };
-
 
 class ImplementedFunction
 {
