@@ -81,6 +81,8 @@ public:
     Hashtable<FnDecl*>* getVTable() { return vTable; }
     List<VarDecl*>* getFields() { return fields; }
     Scoper* getScoper() { return classScoper; }
+    int getNumFields() { return numFields; }
+    char* getClassLabel() { return classLabel; }
 };
 
 class InterfaceDecl : public Decl

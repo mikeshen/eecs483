@@ -229,7 +229,7 @@ protected:
 public:
     NewExpr(yyltype loc, NamedType* clsType);
     Type* getEvalType(SymbolTable* symT) { return cType; }
-    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {}
+    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT);
 };
 
 class NewArrayExpr : public Expr
@@ -241,7 +241,7 @@ protected:
 public:
     NewArrayExpr(yyltype loc, Expr* sizeExpr, Type* elemType);
     Type* getEvalType(SymbolTable* symT) { return (new ArrayType(*location, elemType)); }
-    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {}
+    void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT);
 };
 
 class ReadIntegerExpr : public Expr
