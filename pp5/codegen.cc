@@ -11,7 +11,7 @@
 #include "mips.h"
 #include "ast_decl.h"
 #include "errors.h"
-  
+
 CodeGenerator::CodeGenerator()
 {
   code = new List<Instruction*>();
@@ -36,9 +36,9 @@ Location *CodeGenerator::GenTempVariable()
   return GenLocalVariable(temp);
 }
 
-  
+
 Location *CodeGenerator::GenLocalVariable(const char *varName)
-{            
+{
     curStackOffset -= VarSize;
     Location *loc = new Location(fpRelative, curStackOffset+4, varName);
     return loc;
@@ -76,14 +76,14 @@ Location *CodeGenerator::GenLoadConstant(const char *s)
   Location *result = GenTempVariable();
   code->Append(new LoadStringConstant(result, s));
   return result;
-} 
+}
 
 Location *CodeGenerator::GenLoadLabel(const char *label)
 {
   Location *result = GenTempVariable();
   code->Append(new LoadLabel(result, label));
   return result;
-} 
+}
 
 
 void CodeGenerator::GenAssign(Location *dst, Location *src)
@@ -106,7 +106,7 @@ void CodeGenerator::GenStore(Location *dst,Location *src, int offset)
 
 
 Location *CodeGenerator::GenBinaryOp(const char *opName, Location *op1,
-						     Location *op2)
+                 Location *op2)
 {
   Location *result = GenTempVariable();
   code->Append(new BinaryOp(BinaryOp::OpCodeForName(opName), result, op1, op2));
@@ -170,7 +170,7 @@ Location *CodeGenerator::GenLCall(const char *label, bool fnHasReturnValue)
   code->Append(new LCall(label, result));
   return result;
 }
-  
+
 Location *CodeGenerator::GenFunctionCall(const char *fnLabel, List<Location*> *args, bool hasReturnValue)
 {
   for (int i = args->NumElements()-1; i >= 0; i--) // push params right to left
@@ -186,19 +186,19 @@ Location *CodeGenerator::GenACall(Location *fnAddr, bool fnHasReturnValue)
   code->Append(new ACall(fnAddr, result));
   return result;
 }
-  
+
 Location *CodeGenerator::GenMethodCall(Location *rcvr,
-			     Location *meth, List<Location*> *args, bool fnHasReturnValue)
+           Location *meth, List<Location*> *args, bool fnHasReturnValue)
 {
   for (int i = args->NumElements()-1; i >= 0; i--)
     GenPushParam(args->Nth(i));
-  GenPushParam(rcvr);	// hidden "this" parameter
+  GenPushParam(rcvr); // hidden "this" parameter
   Location *result= GenACall(meth, fnHasReturnValue);
   GenPopParams((args->NumElements()+1)*VarSize);
   return result;
 }
- 
- 
+
+
 static struct _builtin {
   const char *label;
   int numArgs;
@@ -222,8 +222,8 @@ Location *CodeGenerator::GenBuiltInCall(BuiltIn bn,Location *arg1, Location *arg
   if (b->hasReturn) result = GenTempVariable();
                 // verify appropriate number of non-NULL arguments given
   Assert((b->numArgs == 0 && !arg1 && !arg2)
-	|| (b->numArgs == 1 && arg1 && !arg2)
-	|| (b->numArgs == 2 && arg1 && arg2));
+  || (b->numArgs == 1 && arg1 && !arg2)
+  || (b->numArgs == 2 && arg1 && arg2));
   if (arg2) code->Append(new PushParam(arg2));
   if (arg1) code->Append(new PushParam(arg1));
   code->Append(new LCall(b->label, result));
@@ -237,6 +237,10 @@ void CodeGenerator::GenVTable(const char *className, List<const char *> *methodL
   code->Append(new VTable(className, methodLabels));
 }
 
+void CodeGenerator::DoOptimization()
+{
+
+}
 
 void CodeGenerator::DoFinalCodeGen()
 {
@@ -250,8 +254,6 @@ void CodeGenerator::DoFinalCodeGen()
       code->Nth(i)->Emit(&mips);
   }
 }
-
-
 
 Location *CodeGenerator::GenArrayLen(Location *array)
 {
@@ -293,7 +295,7 @@ Location *CodeGenerator::GenSubscript(Location *array, Location *index)
   Location *four = GenLoadConstant(VarSize);
   Location *offset = GenBinaryOp("*", four, index);
   Location *elem = GenBinaryOp("+", array, offset);
-  return GenIndirect(elem, 0); 
+  return GenIndirect(elem, 0);
 }
 
 

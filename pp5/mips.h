@@ -7,7 +7,7 @@
  *
  * You can scan this code to see it works and get a sense of what
  * it does.  You will not need to modify this class unless
- * you're attempting some machine-specific optimizations. 
+ * you're attempting some machine-specific optimizations.
  *
  * It comments the emitted assembly but the commenting for the code
  * in the class itself is pretty sparse. The SPIM manual (see link
@@ -45,16 +45,16 @@ class Mips {
     Register rs, rt, rd;
 
     void EmitCallInstr(Location *dst, const char *fn, bool isL);
-    
+
     static const char *mipsName[NumOps];
     static const char *NameForTac(OpCode code);
 
   public:
-    
+
     Mips();
 
     static void Emit(const char *fmt, ...);
-    
+
     void EmitLoadConstant(Location *dst, int val);
     void EmitLoadStringConstant(Location *dst, const char *str);
     void EmitLoadLabel(Location *dst, const char *label);
@@ -63,7 +63,7 @@ class Mips {
     void EmitStore(Location *reference, Location *value, int offset);
     void EmitCopy(Location *dst, Location *src);
 
-    void EmitBinaryOp(OpCode code, Location *dst, 
+    void EmitBinaryOp(OpCode code, Location *dst,
 			    Location *op1, Location *op2);
 
     void EmitLabel(const char *label);
@@ -89,4 +89,4 @@ class Mips {
 
 
 #endif
- 
+
