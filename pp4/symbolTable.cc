@@ -1,5 +1,6 @@
 #include "ast_decl.h"
 #include "symbolTable.h"
+
 /** Class: Symbol **/
 Symbol::Symbol(E_Type t, Node* n) : type(t), node(n), env(NULL) {}
 
@@ -17,6 +18,22 @@ Node* SymbolTable::getThisClass() {
     if (_this == NULL)
         return NULL;
     return (_this)->getOwnerNode();
+}
+
+Symbol* SymbolTable::getThisSymbol() {
+    SymbolTable* current = this;
+    while (dynamic_cast<Decl*>(current->ownernode) == 0)
+        current = current->_parent;
+    ClassDecl* temp = dynamic_cast<ClassDecl*>(_parent->ownernode);
+    if (temp && _parent->table->Lookup(temp->getName()))
+        return _parent->table->Lookup(temp->getName());
+
+    FnDecl* temp2 = dynamic_cast<FnDecl*>(current->ownernode);
+    if (temp2 && find(temp2->getName()))
+        return find(temp2->getName());
+    
+    Assert(0);
+    return nullptr;
 }
 
 Symbol* SymbolTable::find(char* key) {

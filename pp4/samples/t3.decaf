@@ -8,8 +8,8 @@ void main()
 }
 
 class Cow {
-  int height;
   int weight;
+  int height;
 
   void Init(int w, int h)
   {

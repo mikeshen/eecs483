@@ -23,17 +23,27 @@ char *CodeGenerator::NewLabel()
   return strdup(temp);
 }
 
+char *CodeGenerator::NewFunctionLabel(char* name) {
+  int len = strlen(name) + 6;
+  char* label = NULL;
+  if (strcmp(name, "main") == 0)
+    return name;
+  label = (char*) malloc(len);
+  sprintf(label, "Func_%s", name);
+  return label;
+}
 
 Location *CodeGenerator::GenTempVariable(Scoper* s)
 {
   static int nextTempNum;
   char temp[10];
-  Location *result = NULL;
+
   sprintf(temp, "_tmp%d", nextTempNum++);
   /* pp4: need to create variable in proper location
      in stack frame for use as temporary. Until you
      do that, the assert below will always fail to remind
      you this needs to be implemented  */
+     Location *result = s->Alloc(temp, 4);
   Assert(result != NULL);
   return result;
 }

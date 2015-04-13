@@ -15,6 +15,7 @@
 
 #include "list.h"
 #include "ast.h"
+#include <sstream>
 
  class Decl;
  class VarDecl;
@@ -38,7 +39,7 @@ class Stmt : public Node
 public:
     Stmt() : Node() {}
     Stmt(yyltype loc) : Node(loc) { frameLoc = NULL;}
-    virtual bool BuildTree(SymbolTable* symT) { return true; }
+    virtual void BuildTree(SymbolTable* symT) { return; }
 	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT) {}
 	Location* getFrameLoc() { return frameLoc; }
 
@@ -55,7 +56,7 @@ protected:
 
 public:
     StmtBlock(List<VarDecl*>* variableDeclarations, List<Stmt*>* statements);
-    virtual bool BuildTree(SymbolTable* symT);
+    virtual void BuildTree(SymbolTable* symT);
 	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT);
 };
 
@@ -89,7 +90,7 @@ protected:
 
 public:
     ForStmt(Expr* init, Expr* test, Expr* step, Stmt* body);
-    virtual bool BuildTree(SymbolTable* symT);
+    virtual void BuildTree(SymbolTable* symT);
 	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT);
 };
 
@@ -97,7 +98,7 @@ class WhileStmt : public LoopStmt
 {
 public:
     WhileStmt(Expr* test, Stmt* body) : LoopStmt(test, body) {}
-    virtual bool BuildTree(SymbolTable* symT);
+    virtual void BuildTree(SymbolTable* symT);
 	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT);
 };
 
@@ -108,7 +109,7 @@ protected:
 
 public:
     IfStmt(Expr* test, Stmt* thenBody, Stmt* elseBody);
-    virtual bool BuildTree(SymbolTable* symT);
+    virtual void BuildTree(SymbolTable* symT);
 	virtual void Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT);
 };
 
@@ -152,7 +153,7 @@ protected:
 
 public:
     Case(IntConstant* v, List<Stmt*>* stmts);
-    virtual bool BuildTree(SymbolTable* symT);
+    virtual void BuildTree(SymbolTable* symT);
 };
 
 class SwitchStmt : public Stmt
@@ -163,7 +164,8 @@ protected:
 
 public:
     SwitchStmt(Expr* e, List<Case*>* cases);
-    virtual bool BuildTree(SymbolTable* symT);
+    virtual void BuildTree(SymbolTable* symT);
 };
 
+Type* convertArray(Type* type);
 #endif

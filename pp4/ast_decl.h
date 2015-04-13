@@ -33,7 +33,7 @@ protected:
 public:
     Decl(Identifier* name);
     friend std::ostream& operator<<(std::ostream& out, Decl* d) { return out << d->id; }
-    virtual bool BuildTree(SymbolTable* symT) { return true; }
+    virtual void BuildTree(SymbolTable* symT) { return; }
     virtual Type* getType() { return NULL; }
     virtual void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {}
     char* getName() { return id->getName(); }
@@ -47,7 +47,7 @@ protected:
 
 public:
     VarDecl(Identifier* name, Type* type);
-    virtual bool BuildTree(SymbolTable* symT);
+    virtual void BuildTree(SymbolTable* symT);
     virtual Type* getType() { return type; }
 	virtual void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT);
 };
@@ -73,7 +73,7 @@ protected:
 public:
     ClassDecl(Identifier* name, NamedType* extends,
     List<NamedType*>* implements, List<Decl*>* members);
-    virtual bool BuildTree(SymbolTable* symT);
+    virtual void BuildTree(SymbolTable* symT);
     bool Inherit(SymbolTable* symT);
     bool FulfillsInterface(char* name);
     void EmitHelper(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT);
@@ -93,7 +93,7 @@ protected:
 
 public:
     InterfaceDecl(Identifier* name, List<Decl*>* members);
-    virtual bool BuildTree(SymbolTable* symT);
+    virtual void BuildTree(SymbolTable* symT);
     List<Decl*>* getMembers() { return members; }
 };
 
@@ -114,7 +114,7 @@ protected:
 public:
     FnDecl(Identifier* name, Type* returnType, List<VarDecl*>* formals);
     void SetFunctionBody(Stmt* b);
-    virtual bool BuildTree(SymbolTable* symT);
+    virtual void BuildTree(SymbolTable* symT);
     void EmitMethod(ClassDecl* classDecl, Scoper* scoper, CodeGenerator* codegen, SymbolTable* symT);
     virtual void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT);
 

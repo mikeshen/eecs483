@@ -72,6 +72,8 @@ protected:
 public:
     SymbolTable();
 
+    Symbol* getThisSymbol();
+
     void setParent(SymbolTable* p) {
         _parent = p;
     }

@@ -6,6 +6,7 @@
 #include "ast_type.h"
 #include "ast_decl.h"
 #include "ast_expr.h"
+#include <sstream>
 
 SymbolTable* globalEnv;
 
@@ -48,13 +49,26 @@ void Program::Emit() {
         if (varDecl != 0)
             varDecl->Emit(scoper, codegen, programScope);
     }
-    // TODO incomplete function
+
+    for (int i = 0; i < decls->NumElements(); i++) {
+        ClassDecl* classDecl = dynamic_cast<ClassDecl*>(decls->Nth(i));
+        if (classDecl != 0) 
+            classDecl->EmitHelper(scoper, codegen, programScope);
+    }
+
+    for (int i = 0; i < decls->NumElements(); i++) {
+        ClassDecl* classDecl = dynamic_cast<ClassDecl*>(decls->Nth(i));
+        if (classDecl != 0)
+            classDecl->Emit(scoper, codegen, programScope);
+    }
 
     for (int i = 0; i < decls->NumElements(); i++) {
       FnDecl *fnDecl = dynamic_cast<FnDecl*>(decls->Nth(i));
       if (fnDecl != 0)
         fnDecl->Emit(scoper, codegen, programScope);
     }
+
+    codegen->DoFinalCodeGen();
 
 }
 
@@ -64,25 +78,21 @@ StmtBlock::StmtBlock(List<VarDecl*>* d, List<Stmt*>* s) {
     (stmts=s)->SetParentAll(this);
 }
 
-bool StmtBlock::BuildTree(SymbolTable* symT) {
-
+void StmtBlock::BuildTree(SymbolTable* symT) {
     blockScope = symT->addScope();
-    bool flag = true;
 
     for (int i = 0; i < decls->NumElements(); ++i)
-        flag = decls->Nth(i)->BuildTree(blockScope) ? flag : false;
+        decls->Nth(i)->BuildTree(blockScope);
 
     for (int i = 0; i < stmts->NumElements(); ++i)
-        flag = stmts->Nth(i)->BuildTree(blockScope) ? flag : false;
-
-    return flag;
+        stmts->Nth(i)->BuildTree(blockScope);
 }
 
 void StmtBlock::Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT) {
 	for (int i = 0; i < decls->NumElements(); ++i)
-		decls->Nth(i)->Emit(scopee, codegen, symT);
+		decls->Nth(i)->Emit(scopee, codegen, blockScope);
 	for (int i = 0; i< stmts->NumElements(); ++i)
-		stmts->Nth(i)->Emit(scopee, codegen, symT);
+		stmts->Nth(i)->Emit(scopee, codegen, blockScope);
 }
 
 ConditionalStmt::ConditionalStmt(Expr* t, Stmt* b) {
@@ -97,41 +107,42 @@ ForStmt::ForStmt(Expr* i, Expr* t, Expr* s, Stmt* b): LoopStmt(t, b) {
     (step=s)->SetParent(this);
 }
 
-bool ForStmt::BuildTree(SymbolTable* symT) {
+void ForStmt::BuildTree(SymbolTable* symT) {
     blockScope = symT->addScope();
     blockScope->setLastNode(this);
-    return body->BuildTree(blockScope);
+    body->BuildTree(blockScope);
 }
 
 void ForStmt::Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT) {
-	char* endPoint = codegen->NewLabel();
+	nextLabel = codegen->NewLabel();
 	char* loopThing = codegen->NewLabel();
 	init->Emit(scopee, codegen, blockScope);
 	codegen->GenLabel(loopThing);
 	test->Emit(scopee, codegen, blockScope);
-	codegen->GenIfZ(test->getFrameLoc(), endPoint);
+    Assert(test->getFramePosition());
+	codegen->GenIfZ(test->getFramePosition(), nextLabel);
 	body->Emit(scopee, codegen, blockScope);
 	step->Emit(scopee, codegen, blockScope);
 	codegen->GenGoto(loopThing);
-	codegen->GenLabel(endPoint);
+	codegen->GenLabel(nextLabel);
 }
 
-bool WhileStmt::BuildTree(SymbolTable* symT) {
+void WhileStmt::BuildTree(SymbolTable* symT) {
     blockScope = symT->addScope();
 
     blockScope->setLastNode(this);
-    return body->BuildTree(blockScope);
+    body->BuildTree(blockScope);
 }
 
 void WhileStmt::Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable* symT) {
-    char* endPoint = codegen->NewLabel();
+    nextLabel = codegen->NewLabel();
     char* loopThing = codegen->NewLabel();
     codegen->GenLabel(loopThing);
     test->Emit(scopee, codegen, blockScope);
-    codegen->GenIfZ(test->getFrameLoc(), endPoint);
+    codegen->GenIfZ(test->getFramePosition(), nextLabel);
     body->Emit(scopee, codegen, blockScope);
     codegen->GenGoto(loopThing);
-    codegen->GenLabel(endPoint);
+    codegen->GenLabel(nextLabel);
 }
 
 IfStmt::IfStmt(Expr* t, Stmt* tb, Stmt* eb): ConditionalStmt(t, tb) {
@@ -140,20 +151,19 @@ IfStmt::IfStmt(Expr* t, Stmt* tb, Stmt* eb): ConditionalStmt(t, tb) {
     if (elseBody) elseBody->SetParent(this);
 }
 
-bool IfStmt::BuildTree(SymbolTable* symT) {
-    bool flag = true;
-    flag = body->BuildTree(symT) ? flag : false;
+void IfStmt::BuildTree(SymbolTable* symT) {
+    blockScope = symT->addScope();
+    body->BuildTree(blockScope);
     if (elseBody != NULL)
-        flag = elseBody->BuildTree(symT) ? flag : false;
-    return flag;
+        elseBody->BuildTree(blockScope);
 }
 
 void IfStmt::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
     char* conditionLabel = codegen->NewLabel();
 
-    test->Emit(scopee, codegen, symT);
-    codegen->GenIfZ(test->getFrameLoc(), conditionLabel);
-    body->Emit(scopee, codegen, symT);
+    test->Emit(scopee, codegen, blockScope);
+    codegen->GenIfZ(test->getFramePosition(), conditionLabel);
+    body->Emit(scopee, codegen, blockScope);
     if(!elseBody) {
         codegen->GenLabel(conditionLabel);
         return;
@@ -162,7 +172,7 @@ void IfStmt::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
     char* elseBlock = codegen->NewLabel();
     codegen->GenGoto(elseBlock);
     codegen->GenLabel(conditionLabel);
-    elseBody->Emit(scopee, codegen, symT);
+    elseBody->Emit(scopee, codegen, blockScope);
     codegen->GenLabel(elseBlock);
 }
 
@@ -178,7 +188,25 @@ ReturnStmt::ReturnStmt(yyltype loc, Expr* e) : Stmt(loc) {
 
 void ReturnStmt::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
     expr->Emit(scopee, codegen, symT);
-    // codegen->GenReturn(expr->GetFrameLocation()); TODO expr not ready yet
+    codegen->GenReturn(expr->getFramePosition());
+}
+
+
+Type* convertArray(Type* type) {
+    ArrayType* array = dynamic_cast<ArrayType*>(type);
+    if( array != 0 ) {
+        std::ostringstream os1;
+        array->PrintToStream(os1);
+        string s = os1.str();
+        string sub = s.substr(0, s.find("["));
+        if(sub == "int")
+            type = Type::intType;
+        if(sub == "string")
+            type = Type::stringType;
+        if(sub == "bool")
+            type = Type::boolType;
+    }
+    return type;
 }
 
 PrintStmt::PrintStmt(List<Expr*>* a) {
@@ -191,15 +219,20 @@ bool PrintStmt::isPrintable(Type *type) {
 }
 
 void PrintStmt::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
-    // TODO finish this function
-    // Expr* arg = NULL;
-    // Location* loc = NULL;
-    // Type* type = NULL;
+    for (int i = 0; i < args->NumElements(); ++i) {
+        Expr* arg = args->Nth(i);
+        arg->Emit(scopee, codegen, symT);
+        Location* loc = arg->getFramePosition();
+        Type* type = arg->getEvalType(symT);
 
-    // for (int i = 0; i < args->NumElements(); ++i) {
-    //     arg = args->Nth(i);
-    //     arg->Emit(scopee, codegen, symT);
-    // }
+
+        if(type->isEquivalentTo(Type::intType))
+            codegen->GenBuiltInCall(PrintInt, scopee, loc, NULL);
+        else if(type->isEquivalentTo(Type::boolType))
+            codegen->GenBuiltInCall(PrintBool, scopee, loc, NULL);
+        else if(type->isEquivalentTo(Type::stringType))
+            codegen->GenBuiltInCall(PrintString, scopee, loc, NULL);
+    }
 }
 Case::Case(IntConstant* v, List<Stmt*>* s) {
     Assert(s != NULL);
@@ -209,15 +242,13 @@ Case::Case(IntConstant* v, List<Stmt*>* s) {
 }
 
 // deprecated
-bool Case::BuildTree(SymbolTable* symT) {
+void Case::BuildTree(SymbolTable* symT) {
     caseScope = symT->addScope();
-    bool flag = true;
+
 
     caseScope->setLastNode(this);
     for (int i = 0; i < stmts->NumElements(); ++i)
-        flag = stmts->Nth(i)->BuildTree(symT) ? flag : false;
-
-    return flag;
+        stmts->Nth(i)->BuildTree(symT);
 }
 
 SwitchStmt::SwitchStmt(Expr* e, List<Case*>* c) {
@@ -227,10 +258,8 @@ SwitchStmt::SwitchStmt(Expr* e, List<Case*>* c) {
 }
 
 // deprecated
-bool SwitchStmt::BuildTree(SymbolTable* symT) {
-    bool flag = true;
+void SwitchStmt::BuildTree(SymbolTable* symT) {
     for (int i = 0; i < cases->NumElements(); ++i)
-        flag = cases->Nth(i)->BuildTree(symT) ? flag : false;
+        cases->Nth(i)->BuildTree(symT);
 
-    return flag;
 }

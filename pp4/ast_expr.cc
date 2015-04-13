@@ -64,16 +64,37 @@ void ArithmeticExpr::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* s
 void RelationalExpr::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
     left->Emit(scopee, codegen, symT);
     right->Emit(scopee, codegen, symT);
-    framePosition = codegen->GenBinaryOp(op->getTokenString(), left->getFramePosition(), right->getFramePosition(), scopee);
+    if(string(op->getTokenString()) == "<")
+        framePosition = codegen->GenBinaryOp(op->getTokenString(), left->getFramePosition(), right->getFramePosition(), scopee);
+    if(string(op->getTokenString()) == ">")
+        framePosition = codegen->GenBinaryOp("<", right->getFramePosition(), left->getFramePosition(), scopee);
+    if(string(op->getTokenString()) == "<=") {
+        framePosition = codegen->GenBinaryOp("<", right->getFramePosition(), left->getFramePosition(), scopee);
+        framePosition = codegen->GenBinaryOp("==", framePosition, codegen->GenLoadConstant(0, scopee), scopee);
+    }
+    if(string(op->getTokenString()) == ">=") {
+        framePosition = codegen->GenBinaryOp("<", left->getFramePosition(), right->getFramePosition(), scopee);
+        framePosition = codegen->GenBinaryOp("==", framePosition, codegen->GenLoadConstant(0, scopee), scopee);
+    }
 }
 
 void EqualityExpr::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
     left->Emit(scopee, codegen, symT);
     right->Emit(scopee, codegen, symT);
-    if(left->getEvalType(symT)->IsEquivalentTo(Type::stringType) && right->getEvalType(symT)->IsEquivalentTo(Type::stringType))
+    Type* leftType = left->getEvalType(symT);
+    Type* rightType = right->getEvalType(symT);
+    if(leftType->IsEquivalentTo(Type::stringType) && rightType->IsEquivalentTo(Type::stringType)) {
         framePosition = codegen->GenBuiltInCall(StringEqual, scopee, left->getFramePosition(), right->getFramePosition());
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// != for string
-    framePosition = codegen->GenBinaryOp(op->getTokenString(), left->getFramePosition(), right->getFramePosition(), scopee);
+        if(strcmp(op->getTokenString(), "!=") == 0)
+            framePosition = codegen->GenBinaryOp("==", framePosition, codegen->GenLoadConstant(0, scopee), scopee);
+        return;
+    }
+    if (strcmp(op->getTokenString(), "!=") == 0) {
+        framePosition = codegen->GenBinaryOp("==", left->getFramePosition(), right->getFramePosition(), scopee);
+        framePosition = codegen->GenBinaryOp("==", framePosition, codegen->GenLoadConstant(0, scopee), scopee);
+    }
+    else
+        framePosition = codegen->GenBinaryOp(op->getTokenString(), left->getFramePosition(), right->getFramePosition(), scopee);
 }
 
 
@@ -92,35 +113,39 @@ void LogicalExpr::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT
 void AssignExpr::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
     right->Emit(scopee, codegen, symT);
     left->Emit(scopee, codegen, symT);
-    if(deref)
-        codegen->GenStore(left->getFramePosition(), right->getFramePosition(), 0);
+    if(left->getDeref())
+        codegen->GenStore(left->getRef(), right->getFramePosition(), 0);
     else
-        codegen->GenAssign(left->getFramePosition(), right->getFramePosition());////////////I have no idea when this is actually used
+        codegen->GenAssign(left->getFramePosition(), right->getFramePosition());
+
     framePosition = left->getFramePosition();
 }
 
 void This::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
-    framePosition = (symT->find(strdup("this")))->getLoc();//////////////////////////////////////////////////////
+    framePosition = symT->find(strdup("this"), VARIABLE)->getLoc();
 }
 
 void ArrayAccess::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT){
     base->Emit(scopee, codegen, symT);
     subscript->Emit(scopee, codegen, symT);
-    Location* minIndex = codegen->GenLoadConstant(0, scopee);
-    Location* lowerBound = codegen->GenBinaryOp("<", subscript->getFramePosition(), minIndex, scopee);
-    Location* maxIndex = codegen->GenLoad(base->getFramePosition(), scopee, 0);
-    Location* upperBound = codegen->GenBinaryOp(">=", subscript->getFramePosition(), maxIndex, scopee);
-
-    Location* theTest = codegen->GenBinaryOp("||", upperBound, lowerBound, scopee);
+    Location* zero = codegen->GenLoadConstant(0, scopee);
+    Location* lowerBound = codegen->GenBinaryOp("<", subscript->getFramePosition(), zero, scopee);
+    Location* maxIndex = codegen->GenLoad(base->getFramePosition(), scopee, -4);
+    Location* upperBound = codegen->GenBinaryOp("<", subscript->getFramePosition(), maxIndex, scopee);
+    Location* flip = codegen->GenBinaryOp("==", zero, upperBound, scopee);
+    Location* theTest = codegen->GenBinaryOp("||", flip, lowerBound, scopee);
     char* endPoint = codegen->NewLabel();
     codegen->GenIfZ(theTest, endPoint);
-    ////////////////////////////////No error message
+    Location* errorMessage = codegen->GenLoadConstant(err_arr_out_of_bounds, scopee);
+    codegen->GenBuiltInCall(PrintString, scopee, errorMessage, NULL);
+    codegen->GenBuiltInCall(Halt, scopee, NULL, NULL);
     codegen->GenLabel(endPoint);
     Location* four = codegen->GenLoadConstant(4, scopee);
-    Location* one = codegen->GenLoadConstant(1, scopee);
-    Location* temp = codegen->GenBinaryOp("+", subscript->getFramePosition(), one, scopee);
-    Location* offset = codegen->GenBinaryOp("*", temp, subscript->getFramePosition(), scopee);
-    framePosition = codegen->GenLoad(codegen->GenBinaryOp("+", base->getFramePosition(), offset, scopee), scopee, 0);
+    Location* offset = codegen->GenBinaryOp("*", four, subscript->getFramePosition(), scopee);
+
+    reference = codegen->GenBinaryOp("+", base->getFramePosition(), offset, scopee);
+
+    framePosition = codegen->GenLoad(reference, scopee, 0); //TODO: check
 }
 
 
@@ -138,8 +163,8 @@ FieldAccess::FieldAccess(Expr *b, Identifier *f)
     (field=f)->SetParent(this);
 }
 
-Type* FieldAccess::getEvalType(SymbolTable* symT) {
-    if(!base) {
+Type* FieldAccess::getEvalType(SymbolTable* symT) { ////////////////////////////////////////////////////Fix for classes
+    if(base) {
         NamedType* baseType = dynamic_cast<NamedType*>(base->getEvalType(symT));
         Symbol* element = symT->findClassField(baseType->getName(), field->getName(), VARIABLE);
         Decl *fieldDecl = static_cast<Decl*>(element->getNode());
@@ -150,33 +175,6 @@ Type* FieldAccess::getEvalType(SymbolTable* symT) {
 }
 
 void FieldAccess::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
-    /*
-    if(base) {
-        deref = true;
-        base->Emit(scopee, codegen, symT);
-        Symbol* klass = symT->find(base->getEvalType(symT)->getName(), CLASS);
-        Symbol* fieldSym = klass->getEnv()->find(field->getName(), VARIABLE);
-        Location* loc = fieldSym->getLoc();
-        Location* offset = codegen->GenLoadConstant(loc->GetOffset(), scopee);
-        framePosition = codegen->GenLoad(codegen->GenBinaryOp("+", loc, offset, scopee), scopee, 0);
-        return;
-    }
-
-    Symbol* sym = symT->find(field->getName(), VARIABLE);
-    Location* loc = sym->getLoc();
-
-    if(loc->getSegment() != classRelative) {
-        framePosition = loc
-        return;
-    }
-
-    deref = true;
-    Symbol* temp = symT->find("this", VARIABLE);
-    Location* offset = codegen->GenLoadConstant(loc->GetOffset(), scopee);
-    framePosition = codegen->GenLoad(codegen->GenBinaryOp("+", temp->getLoc(), offset, scopee), scopee, 0);
-    */
-
-
     Location* loc = NULL;
     Location* temp2 = NULL;
 
@@ -185,24 +183,25 @@ void FieldAccess::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT
         Symbol* klass = symT->find(base->getEvalType(symT)->getName(), CLASS);
         Symbol* fieldSym = klass->getEnv()->find(field->getName(), VARIABLE);
         loc = fieldSym->getLoc();
-        temp2 = loc;
+        temp2 = base->getFramePosition();
     }
     else {
         Symbol* sym = symT->find(field->getName(), VARIABLE);
         Symbol* temp = symT->find(strdup("this"), VARIABLE);
         loc = sym->getLoc();
-        /*
-        if(loc->getSegment() != classRelative) {
-            framePosition = loc
+        if(loc->GetSegment() != cRelative) {
+            framePosition = loc;
             return;
         }
-        */
         temp2 = temp->getLoc();
     }
 
+        Assert(temp2);
+
     deref = true;
     Location* offset = codegen->GenLoadConstant(loc->GetOffset(), scopee);
-    framePosition = codegen->GenLoad(codegen->GenBinaryOp("+", temp2, offset, scopee), scopee, 0);
+    reference = codegen->GenBinaryOp("+", temp2, offset, scopee);
+    framePosition = codegen->GenLoad(reference, scopee, 0);
 }
 
 Call::Call(yyltype loc, Expr *b, Identifier *f, List<Expr*> *a) : Expr(loc)  {
@@ -254,24 +253,24 @@ void Call::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
             isNonVoid = false;
         if (!fnDecl->isMethod()) {
             numParams += EmitParams(scopee, codegen, symT);
-            char* functionLabel = codegen->NewLabel();
+            char* functionLabel = codegen->NewFunctionLabel(fnDecl->getName());
             framePosition = codegen->GenLCall(functionLabel, isNonVoid, scopee);
             codegen->GenPopParams(numParams * 4);
             return;
         }
 
 
-        Symbol* thisSymbol = symT->find(strdup("this"), VARIABLE);
+        Symbol* thisSymbol = symT->find(strdup("this"));
         objectPosition = thisSymbol->getLoc();
         offset = fnDecl->getOffset();
-        methodAddress = codegen->GenLoad(codegen->GenLoad(thisSymbol->getLoc(), scopee, 0),
-                                         scopee, offset * 4);
+        Location* temporary = codegen->GenLoad(thisSymbol->getLoc(), scopee, 0);
+        methodAddress = codegen->GenLoad(temporary, scopee, offset * 4);
     }
     else {
         base->Emit(scopee, codegen, symT);
         if (dynamic_cast<ArrayType*>(base->getEvalType(symT)) != 0 &&
             strcmp(field->getName(), "length") == 0) {
-            framePosition = codegen->GenLoad(base->getFramePosition(), scopee, 0);
+            framePosition = codegen->GenLoad(base->getFramePosition(), scopee, -4);
             return;
         }
 
@@ -283,8 +282,7 @@ void Call::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
 
         objectPosition = base->getFramePosition();
         offset = fnDecl->getOffset();
-        methodAddress = codegen->GenLoad(codegen->GenLoad(base->getFramePosition(), scopee, 0),
-                                         scopee, offset * 4);
+        methodAddress = codegen->GenLoad(codegen->GenLoad(base->getFramePosition(), scopee, 0), scopee, offset * 4);
     }
 
     numParams += EmitParams(scopee, codegen, symT);
@@ -318,16 +316,21 @@ NewArrayExpr::NewArrayExpr(yyltype loc, Expr *sz, Type *et) : Expr(loc) {
 
 void NewArrayExpr::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
     size->Emit(scopee, codegen, symT);
-    Location* zero = codegen->GenLoadConstant(0, scopee);
-    Location* four = codegen->GenLoadConstant(4, scopee);
+
     Location* one = codegen->GenLoadConstant(1, scopee);
-    Location* sizeCheck = codegen->GenBinaryOp("=>", zero, size->getFramePosition(), scopee);
-    Location* arrayDimension = codegen->GenBinaryOp("*", four, codegen->GenBinaryOp("+", one, size->getFramePosition(), scopee), scopee);
+    Location* sizeCheck = codegen->GenBinaryOp("<", size->getFramePosition(), one, scopee);
+    
     char* endPoint = codegen->NewLabel();
     codegen->GenIfZ(sizeCheck, endPoint);
+    Location* errorMessage = codegen->GenLoadConstant(err_arr_bad_size, scopee);
+    codegen->GenBuiltInCall(PrintString, scopee, errorMessage, NULL);
+    codegen->GenBuiltInCall(Halt, scopee, NULL, NULL);
     codegen->GenLabel(endPoint);
-    framePosition = codegen->GenBuiltInCall(Alloc, scopee, arrayDimension, NULL);
-    codegen->GenStore(framePosition, size->getFramePosition(), 0);
+    Location* four = codegen->GenLoadConstant(4, scopee);
+    Location* arrayDimension = codegen->GenBinaryOp("*", four, codegen->GenBinaryOp("+", one, size->getFramePosition(), scopee), scopee);
+    Location* start = codegen->GenBuiltInCall(Alloc, scopee, arrayDimension, NULL);
+    codegen->GenStore(start, size->getFramePosition(), 0);
+    framePosition = codegen->GenBinaryOp("+", four, start, scopee);
 }
 
 

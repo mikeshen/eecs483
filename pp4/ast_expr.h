@@ -29,10 +29,12 @@ public:
     Expr() : Stmt() {}
     virtual Type* getEvalType(SymbolTable* symT) { return Type::stringType; }
     Location* getFramePosition() { return framePosition; }
-
+    bool getDeref() { return deref; }
+    Location* getRef() { return reference; }
 protected:
     Location* framePosition;
     bool deref = false;
+    Location* reference = NULL;
 };
 
 /* This node type is used for those places where an expression is optional.
@@ -182,9 +184,10 @@ protected:
 
 public:
     ArrayAccess(yyltype loc, Expr* base, Expr* subscript);
-    virtual Type* getEvalType(SymbolTable* symT) { return base->getEvalType(symT); }
+    virtual Type* getEvalType(SymbolTable* symT) { return convertArray(base->getEvalType(symT)); }
     void Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT);
 };
+
 
 /* Note that field access is used both for qualified names
  * base.field and just field without qualification. We don't
@@ -268,6 +271,7 @@ protected:
 public:
     PostfixExpr(LValue* lv, Operator* op);
 };
+
 
 
 #endif

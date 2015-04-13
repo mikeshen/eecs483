@@ -17,19 +17,19 @@ VarDecl::VarDecl(Identifier* n, Type* t) : Decl(n) {
     (type=t)->SetParent(this);
 }
 
-bool VarDecl::BuildTree(SymbolTable* symT) {
+void VarDecl::BuildTree(SymbolTable* symT) {
     Symbol* sym = symT->findLocal(id->getName());
     if (sym != NULL) {
         ReportError::DeclConflict(this, static_cast<Decl*>(sym->getNode()));
-        return false;
+        return;
     }
     symT->add(id->getName(), this);
-    return true;
 }
 
 void VarDecl::Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable *symT) {
 	Symbol* s = symT->find(id->getName(), VARIABLE);
 	Location* l = scopee->Alloc(id->getName(), 4);
+    Assert(s);
 	s->setLoc(l);
 }
 
@@ -45,8 +45,7 @@ ClassDecl::ClassDecl(Identifier* n, NamedType* ex, List<NamedType*>* imp, List<D
     (members=m)->SetParentAll(this);
 }
 
-bool ClassDecl::BuildTree(SymbolTable* symT) {
-    bool flag = true;
+void ClassDecl::BuildTree(SymbolTable* symT) {
     Symbol* sym = symT->findLocal(id->getName());
 
     if (sym != NULL)
@@ -56,9 +55,8 @@ bool ClassDecl::BuildTree(SymbolTable* symT) {
     classScope->setThis(classScope);
 
     for (int i = 0; i < members->NumElements(); ++i)
-        flag = members->Nth(i)->BuildTree(classScope) ? flag : false;
+        members->Nth(i)->BuildTree(classScope);
 
-    return flag;
 }
 
 bool ClassDecl::FulfillsInterface(char *name) {
@@ -97,7 +95,7 @@ void ClassDecl::EmitHelper(Scoper* scopee, CodeGenerator* codegen, SymbolTable* 
         if (tempMethod == 0) { // is field
             VarDecl* tempField = dynamic_cast<VarDecl*>(members->Nth(i));
             fields->Append(tempField);
-            tempField->Emit(classScoper, codegen, symT);
+            tempField->Emit(classScoper, codegen, classScope);
         }
         else {
             vTable->Enter(tempMethod->getName(), tempMethod);
@@ -114,7 +112,7 @@ void ClassDecl::EmitHelper(Scoper* scopee, CodeGenerator* codegen, SymbolTable* 
 
 void ClassDecl::Emit(Scoper* scopee, CodeGenerator* codegen, SymbolTable* symT) {
     for (int i = 0; i < emittedMethods->NumElements(); ++i)
-        emittedMethods->Nth(i)->EmitMethod(this, classScoper, codegen, symT);
+        emittedMethods->Nth(i)->EmitMethod(this, classScoper, codegen, classScope);
 
     numFields = fields->NumElements();
     List<const char*>* methodLabels = new List<const char*>;
@@ -163,21 +161,18 @@ InterfaceDecl::InterfaceDecl(Identifier* n, List<Decl*>* m) : Decl(n), interface
 }
 
 
-bool InterfaceDecl::BuildTree(SymbolTable* symT) {
-    bool flag = true;
+void InterfaceDecl::BuildTree(SymbolTable* symT) {
     Symbol* sym = symT->findLocal(id->getName());
 
     if (sym != NULL) {
         ReportError::DeclConflict(this, static_cast<Decl*>(sym->getNode()));
-        flag = false;
     }
 
     interfaceScope = symT->addUnderScope(id->getName(), this, INTERFACE);
 
     for (int i = 0; i < members->NumElements(); ++i)
-        flag = members->Nth(i)->BuildTree(interfaceScope) ? flag : false;
+        members->Nth(i)->BuildTree(interfaceScope);
 
-    return flag;
 }
 
 FnDecl::FnDecl(Identifier* n, Type* r, List<VarDecl*>* d) : Decl(n), fnScope(NULL),
@@ -193,23 +188,20 @@ void FnDecl::SetFunctionBody(Stmt* b) {
     (body=b)->SetParent(this);
 }
 
-bool FnDecl::BuildTree(SymbolTable* symT) {
-    bool flag = true;
+void FnDecl::BuildTree(SymbolTable* symT) {
     Symbol* sym = symT->findLocal(id->getName());
 
     if (sym != NULL) {
         ReportError::DeclConflict(this, static_cast<Decl*>(sym->getNode()));
-        flag = false;
     }
 
     fnScope = symT->addUnderScope(id->getName(), this, FUNCTION);
 
     for (int i = 0; i < formals->NumElements(); ++i)
-        flag = formals->Nth(i)->BuildTree(fnScope) ? flag : false;
+        formals->Nth(i)->BuildTree(fnScope);
 
-    if (body && !(body->BuildTree(fnScope)))
-        return false;
-    return flag;
+    if (body)
+        body->BuildTree(fnScope);
 }
 
 void FnDecl::EmitMethod(ClassDecl* classDecl, Scoper* scoper,
@@ -235,7 +227,7 @@ void FnDecl::Emit(Scoper *scopee, CodeGenerator *codegen, SymbolTable *symT) {
     paramScoper = new Scoper(fpRelative, UP);
     bodyScoper = new Scoper(fpRelative, DOWN);
 
-    functionLabel = codegen->NewLabel();
+    functionLabel = codegen->NewFunctionLabel(id->getName());
     codegen->GenLabel(functionLabel);
     beginFn = codegen->GenBeginFunc();
     for (int i = 0; i < formals->NumElements(); ++i)
