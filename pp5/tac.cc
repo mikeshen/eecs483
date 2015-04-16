@@ -2,7 +2,7 @@
  * ------------
  * Implementation of Location class and Instruction class/subclasses.
  */
-  
+
 #include "tac.h"
 #include "mips.h"
 #include <string.h>
@@ -11,7 +11,7 @@
 Location::Location(Segment s, int o, const char *name) :
   variableName(strdup(name)), segment(s), offset(o), reg(Mips::zero) {}
 
- 
+
 void Instruction::Print() {
   printf("\t%s ;", printed);
   printf("\n");
@@ -45,7 +45,7 @@ void LoadStringConstant::EmitSpecific(Mips *mips) {
   mips->EmitLoadStringConstant(dst, str);
 }
 
-     
+
 
 LoadLabel::LoadLabel(Location *d, const char *l)
   : dst(d), label(strdup(l)) {
@@ -72,7 +72,7 @@ void Assign::EmitSpecific(Mips *mips) {
 Load::Load(Location *d, Location *s, int off)
   : dst(d), src(s), offset(off) {
   Assert(dst != NULL && src != NULL);
-  if (offset) 
+  if (offset)
     sprintf(printed, "%s = *(%s + %d)", dst->GetName(), src->GetName(), offset);
   else
     sprintf(printed, "%s = *(%s)", dst->GetName(), src->GetName());
@@ -95,11 +95,11 @@ void Store::EmitSpecific(Mips *mips) {
   mips->EmitStore(dst, src, offset);
 }
 
- 
+
 const char * const BinaryOp::opName[Mips::NumOps]  = {"+", "-", "*", "/", "%", "==", "<", "&&", "||"};;
 
 Mips::OpCode BinaryOp::OpCodeForName(const char *name) {
-  for (int i = 0; i < Mips::NumOps; i++) 
+  for (int i = 0; i < Mips::NumOps; i++)
     if (opName[i] && !strcmp(opName[i], name))
 	return (Mips::OpCode)i;
   Failure("Unrecognized Tac operator: '%s'\n", name);
@@ -112,7 +112,7 @@ BinaryOp::BinaryOp(Mips::OpCode c, Location *d, Location *o1, Location *o2)
   Assert(code >= 0 && code < Mips::NumOps);
   sprintf(printed, "%s = %s %s %s", dst->GetName(), op1->GetName(), opName[code], op2->GetName());
 }
-void BinaryOp::EmitSpecific(Mips *mips) {	  
+void BinaryOp::EmitSpecific(Mips *mips) {
   mips->EmitBinaryOp(code, dst, op1, op2);
 }
 
@@ -130,12 +130,12 @@ void Label::EmitSpecific(Mips *mips) {
 }
 
 
- 
+
 Goto::Goto(const char *l) : label(strdup(l)) {
   Assert(label != NULL);
   sprintf(printed, "Goto %s", label);
 }
-void Goto::EmitSpecific(Mips *mips) {	  
+void Goto::EmitSpecific(Mips *mips) {
   mips->EmitGoto(label);
 }
 
@@ -145,7 +145,7 @@ IfZ::IfZ(Location *te, const char *l)
   Assert(test != NULL && label != NULL);
   sprintf(printed, "IfZ %s Goto %s", test->GetName(), label);
 }
-void IfZ::EmitSpecific(Mips *mips) {	  
+void IfZ::EmitSpecific(Mips *mips) {
   mips->EmitIfZ(test, label);
 }
 
@@ -156,7 +156,7 @@ BeginFunc::BeginFunc() {
   frameSize = -555; // used as sentinel to recognized unassigned value
 }
 void BeginFunc::SetFrameSize(int numBytesForAllLocalsAndTemps) {
-  frameSize = numBytesForAllLocalsAndTemps; 
+  frameSize = numBytesForAllLocalsAndTemps;
   sprintf(printed,"BeginFunc %d", frameSize);
 }
 void BeginFunc::EmitSpecific(Mips *mips) {
@@ -173,16 +173,12 @@ void EndFunc::EmitSpecific(Mips *mips) {
   mips->EmitEndFunction();
 }
 
-
- 
 Return::Return(Location *v) : val(v) {
   sprintf(printed, "Return %s", val? val->GetName() : "");
 }
-void Return::EmitSpecific(Mips *mips) {	  
+void Return::EmitSpecific(Mips *mips) {
   mips->EmitReturn(val);
 }
-
-
 
 PushParam::PushParam(Location *p)
   :  param(p) {
@@ -191,7 +187,7 @@ PushParam::PushParam(Location *p)
 }
 void PushParam::EmitSpecific(Mips *mips) {
   mips->EmitParam(param);
-} 
+}
 
 
 PopParams::PopParams(int nb)
@@ -200,10 +196,7 @@ PopParams::PopParams(int nb)
 }
 void PopParams::EmitSpecific(Mips *mips) {
   mips->EmitPopParams(numBytes);
-} 
-
-
-
+}
 
 LCall::LCall(const char *l, Location *d)
   :  label(strdup(l)), dst(d) {
@@ -216,7 +209,6 @@ void LCall::EmitSpecific(Mips *mips) {
   mips->EmitLCall(dst, label);
 }
 
-
 ACall::ACall(Location *ma, Location *d)
   : dst(d), methodAddr(ma) {
   Assert(methodAddr != NULL);
@@ -228,9 +220,7 @@ void ACall::EmitSpecific(Mips *mips) {
    * and restore them back after the call.
    */
   mips->EmitACall(dst, methodAddr);
-} 
-
-
+}
 
 VTable::VTable(const char *l, List<const char *> *m)
   : methodLabels(m), label(strdup(l)) {
@@ -240,9 +230,9 @@ VTable::VTable(const char *l, List<const char *> *m)
 
 void VTable::Print() {
   printf("VTable %s =\n", label);
-  for (int i = 0; i < methodLabels->NumElements(); i++) 
+  for (int i = 0; i < methodLabels->NumElements(); i++)
     printf("\t%s,\n", methodLabels->Nth(i));
-  printf("; \n"); 
+  printf("; \n");
 }
 void VTable::EmitSpecific(Mips *mips) {
   mips->EmitVTable(label, methodLabels);

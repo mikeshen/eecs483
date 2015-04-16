@@ -36,9 +36,10 @@ void Program::Emit() {
     }
     CodeGenerator *cg = new CodeGenerator();
     decls->EmitAll(cg);
-    if (ReportError::NumErrors() == 0)
+    if (ReportError::NumErrors() == 0) {
         cg->DoOptimization();
         cg->DoFinalCodeGen();
+    }
 }
 
 StmtBlock::StmtBlock(List<VarDecl*> *d, List<Stmt*> *s) {

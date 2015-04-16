@@ -25,6 +25,12 @@ class CodeGenerator {
     int curStackOffset, curGlobalOffset;
     int insideFn;
 
+    // helper functions
+    void genNewBlock(Hashtable<BasicBlock*>* basicBlocks, const char* blockName,
+        const char* functionName, int s, int e, BasicBlock* n, BasicBlock* );
+
+    const char* checkLabel(Hashtable<BasicBlock*>* basicBlocks, int s);
+
   public:
            // Here are some class constants to remind you of the offsets
            // used for globals, locals, and parameters. You will be

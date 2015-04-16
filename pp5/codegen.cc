@@ -239,7 +239,85 @@ void CodeGenerator::GenVTable(const char *className, List<const char *> *methodL
 
 void CodeGenerator::DoOptimization()
 {
+  Hashtable<BasicBlock*>* basicBlocks = new Hashtable<BasicBlock*>();
+  Hashtable<BasicBlock*>* functionBlock = new Hashtable<BasicBlock*>();
+  int lastEnd = -1;
+  const char* blockName = checkLabel(basicBlocks, lastEnd + 1);
+  const char* functionName = blockName;
+  basicBlocks->Enter(blockName, new BasicBlock());
 
+  for (int i = 1; i < code->NumElements(); i++) {
+    bool labelFlag = false;
+    const char* temp = NULL;
+    BasicBlock* n = NULL;
+    BasicBlock* g = NULL;
+
+    switch(code->Nth(i)->GetType()) {
+      case RETURN:
+        if (i + 1 < code->NumElements()) {
+          temp = checkLabel(basicBlocks, i + 1);
+          n = basicBlocks->Lookup(temp);
+          if (!std::atoi(temp))
+            labelFlag = true;
+          functionBlock->Enter(temp, n);
+        } // only line that is different between LCALL/ACALL and RETURN is this
+        genNewBlock(basicBlocks, blockName, functionName, lastEnd + 1, i + 1, NULL, NULL);
+        lastEnd = i;
+        if (labelFlag) i++;
+        blockName = temp;
+        break;
+      case LABEL:
+        temp = checkLabel(basicBlocks, i);
+        n = basicBlocks->Lookup(temp);
+        functionBlock->Enter(temp, n);
+        genNewBlock(basicBlocks, blockName, functionName, lastEnd + 1, i, n, NULL);
+        lastEnd = i - 1;
+        blockName = temp;
+        break;
+      case BEGINFUNC:
+        functionName = blockName;
+        break;
+      case ENDFUNC:
+        if (i + 1 < code->NumElements()) {
+          temp = checkLabel(basicBlocks, i + 1);
+          n = basicBlocks->Lookup(temp);
+          if (!std::atoi(temp))
+            labelFlag = true;
+          functionBlock->Enter(temp, n);
+        }
+        genNewBlock(basicBlocks, blockName, functionName, lastEnd + 1, i + 1, NULL, NULL);
+        // TODO call function analysis on old functionBlock here
+        delete functionBlock;
+        functionBlock = new Hashtable<BasicBlock*>();
+        lastEnd = i;
+        if (labelFlag) i++;
+        blockName = temp;
+        break;
+      // TODO implement IFZ and GOTO here
+      case IFZ:
+        Assert(code->Nth(i+1)->GetType() == GOTO);
+        // goto label assignment
+        temp = checkLabel(basicBlocks, i);
+        g = basicBlocks->Lookup(temp);
+        functionBlock->Enter(temp, g);
+        // next label assignment
+        if (i + 1 < code->NumElements()) {
+          temp = checkLabel(basicBlocks, i + 1);
+          n = basicBlocks->Lookup(temp);
+          if (!std::atoi(temp))
+            labelFlag = true;
+          functionBlock->Enter(temp, n);
+        }
+        genNewBlock(basicBlocks, blockName, functionName, lastEnd + 1, i + 1, n, g);
+        lastEnd = i;
+        if (labelFlag) i++;
+        blockName = temp;
+        break;
+      default:
+        break;
+    }
+
+  }
 }
 
 void CodeGenerator::DoFinalCodeGen()
@@ -326,3 +404,37 @@ void CodeGenerator::GenHaltWithMessage(const char *message)
    GenBuiltInCall(Halt, NULL);
 }
 
+// helper functions
+
+void CodeGenerator::genNewBlock(Hashtable<BasicBlock*>* basicBlocks,
+  const char* blockName, const char* functionName, int s, int e,
+  BasicBlock* n, BasicBlock* g)
+{
+  basicBlocks->Lookup(blockName)->fillBlock(code, s, e, n, g);
+}
+
+const char* CodeGenerator::checkLabel(Hashtable<BasicBlock*>* basicBlocks, int s) {
+  const char* label;
+  char* temp = (char*)malloc(127);
+  switch (code->Nth(s)->GetType()) {
+    case LABEL:
+      std::cerr << "called\n";
+      label = dynamic_cast<Label*>(code->Nth(s))->GetLabel();
+      std::cerr << label << "\n";
+      break;
+    case GOTO:
+      label = dynamic_cast<Goto*>(code->Nth(s))->GetLabel();
+      break;
+    case IFZ:
+      label = dynamic_cast<IfZ*>(code->Nth(s))->GetLabel();
+      break;
+    default:
+      sprintf(temp, "%d", s);
+      label = temp;
+      return label;
+  }
+  free(temp);
+  if (!basicBlocks->Lookup(label))
+    basicBlocks->Enter(label, new BasicBlock());
+  return label;
+}

@@ -25,7 +25,29 @@
 
 #include "list.h" // for VTable
 #include "mips.h"
+#include <string>
 
+#define DEFAULT 1 // should not be used
+#define LOADCONSTANT 2 // U
+#define LOADSTRINGCONSTANT 3 // U
+#define LOADLABEL 4 // U
+#define ASSIGN 5 // U
+#define LOAD 6 // U
+#define STORE 7 // U
+#define BINARYOP 8 // U
+#define LABEL 9 // E + 1, L
+#define GOTO 10 // E
+#define IFZ 11 // E - 1
+#define BEGINFUNC 12 // L
+#define ENDFUNC 13 // E
+#define RETURN 14// E
+#define PUSHPARAM 15 // U
+#define POPPARAMS 16 // U
+#define LCALL 17 // E
+#define ACALL 18 // E
+#define VTABLE 19 // U
+
+using std::string;
     // A Location object is used to identify the operands to the
     // various TAC instructions. A Location is either fp or gp
     // relative (depending on whether livein stack or global segemnt)
@@ -34,30 +56,9 @@
     // variable livein a function would be assigned a Location object
     // with name "num", segment fpRelative, and offset -8.
 
+
 typedef enum {fpRelative, gpRelative} Segment;
 
-typedef enum InstructionType
-{
-  DEFAULT, // should not be used
-  LOADCONSTANT,
-  LOADSTRINGCONSTANT,
-  LOADLABEL,
-  ASSIGN,
-  LOAD,
-  STORE,
-  BINARYOP,
-  LABEL,
-  GOTO,
-  IFZ,
-  BEGINFUNC,
-  ENDFUNC,
-  RETURN,
-  PUSHPARAM,
-  POPPARAMS,
-  LCALL,
-  ACALL,
-  VTABLE
-} InstructionType;
 
 class Location
 {
@@ -97,7 +98,7 @@ class Instruction {
         char printed[128];
 
     public:
-  virtual InstructionType GetType() { return DEFAULT; }
+  virtual int GetType() { return DEFAULT; }
   virtual void Print();
   virtual void EmitSpecific(Mips *mips) = 0;
   virtual void Emit(Mips *mips);
@@ -129,7 +130,7 @@ class LoadConstant: public Instruction {
     int val;
   public:
     LoadConstant(Location *dst, int val);
-    InstructionType GetType() { return LOADCONSTANT; }
+    int GetType() { return LOADCONSTANT; }
     void EmitSpecific(Mips *mips);
 };
 
@@ -138,7 +139,7 @@ class LoadStringConstant: public Instruction {
     char *str;
   public:
     LoadStringConstant(Location *dst, const char *s);
-    InstructionType GetType() { return LOADSTRINGCONSTANT; }
+    int GetType() { return LOADSTRINGCONSTANT; }
     void EmitSpecific(Mips *mips);
 };
 
@@ -146,7 +147,7 @@ class LoadLabel: public Instruction {
     Location *dst;
     const char *label;
   public:
-    InstructionType GetType() { return LOADLABEL; }
+    int GetType() { return LOADLABEL; }
     LoadLabel(Location *dst, const char *label);
     void EmitSpecific(Mips *mips);
 };
@@ -155,7 +156,7 @@ class Assign: public Instruction {
     Location *dst, *src;
   public:
     Assign(Location *dst, Location *src);
-    InstructionType GetType() { return ASSIGN; }
+    int GetType() { return ASSIGN; }
     void EmitSpecific(Mips *mips);
 };
 
@@ -164,7 +165,7 @@ class Load: public Instruction {
     int offset;
   public:
     Load(Location *dst, Location *src, int offset = 0);
-    InstructionType GetType() { return LOAD; }
+    int GetType() { return LOAD; }
     void EmitSpecific(Mips *mips);
 };
 
@@ -173,7 +174,7 @@ class Store: public Instruction {
     int offset;
   public:
     Store(Location *d, Location *s, int offset = 0);
-    InstructionType GetType() { return STORE; }
+    int GetType() { return STORE; }
     void EmitSpecific(Mips *mips);
 };
 
@@ -188,7 +189,7 @@ class BinaryOp: public Instruction {
     Location *dst, *op1, *op2;
   public:
     BinaryOp(Mips::OpCode c, Location *dst, Location *op1, Location *op2);
-    InstructionType GetType() { return BINARYOP; }
+    int GetType() { return BINARYOP; }
     void EmitSpecific(Mips *mips);
 };
 
@@ -197,7 +198,7 @@ class Label: public Instruction {
   public:
     Label(const char *label);
     void Print();
-    InstructionType GetType() { return LABEL; }
+    int GetType() { return LABEL; }
     void EmitSpecific(Mips *mips);
     const char *GetLabel() { return label; }
 };
@@ -206,7 +207,7 @@ class Goto: public Instruction {
     const char *label;
   public:
     Goto(const char *label);
-    InstructionType GetType() { return GOTO; }
+    int GetType() { return GOTO; }
     void EmitSpecific(Mips *mips);
     const char *GetLabel() { return label; }
 };
@@ -216,7 +217,7 @@ class IfZ: public Instruction {
     const char *label;
   public:
     IfZ(Location *test, const char *label);
-    InstructionType GetType() { return IFZ; }
+    int GetType() { return IFZ; }
     void EmitSpecific(Mips *mips);
     const char *GetLabel() { return label; }
 };
@@ -225,7 +226,7 @@ class BeginFunc: public Instruction {
     int frameSize;
   public:
     BeginFunc();
-    InstructionType GetType() { return BEGINFUNC; }
+    int GetType() { return BEGINFUNC; }
     // used to backpatch the instruction with frame size once known
     void SetFrameSize(int numBytesForAllLocalsAndTemps);
     void EmitSpecific(Mips *mips);
@@ -234,7 +235,7 @@ class BeginFunc: public Instruction {
 class EndFunc: public Instruction {
   public:
     EndFunc();
-    InstructionType GetType() { return ENDFUNC; }
+    int GetType() { return ENDFUNC; }
     void EmitSpecific(Mips *mips);
 };
 
@@ -242,7 +243,7 @@ class Return: public Instruction {
     Location *val;
   public:
     Return(Location *val);
-    InstructionType GetType() { return RETURN; }
+    int GetType() { return RETURN; }
     void EmitSpecific(Mips *mips);
 };
 
@@ -250,7 +251,7 @@ class PushParam: public Instruction {
     Location *param;
   public:
     PushParam(Location *param);
-    InstructionType GetType() { return PUSHPARAM; }
+    int GetType() { return PUSHPARAM; }
     void EmitSpecific(Mips *mips);
 };
 
@@ -258,7 +259,7 @@ class PopParams: public Instruction {
     int numBytes;
   public:
     PopParams(int numBytesOfParamsToRemove);
-    InstructionType GetType() {return POPPARAMS; }
+    int GetType() {return POPPARAMS; }
     void EmitSpecific(Mips *mips);
 };
 
@@ -266,8 +267,8 @@ class LCall: public Instruction {
     const char *label;
     Location *dst;
   public:
-    LCall(const char *labe, Location *result);
-    InstructionType GetType() { return LCALL; }
+    LCall(const char *label, Location *result);
+    int GetType() { return LCALL; }
     void EmitSpecific(Mips *mips);
 };
 
@@ -275,7 +276,7 @@ class ACall: public Instruction {
     Location *dst, *methodAddr;
   public:
     ACall(Location *meth, Location *result);
-    InstructionType GetType() { return ACALL; }
+    int GetType() { return ACALL; }
     void EmitSpecific(Mips *mips);
 };
 
@@ -285,8 +286,54 @@ class VTable: public Instruction {
  public:
     VTable(const char *labelForTable, List<const char *> *methodLabels);
     void Print();
-    InstructionType GetType() { return VTABLE; }
+    int GetType() { return VTABLE; }
     void EmitSpecific(Mips *mips);
+};
+
+
+class BasicBlock {
+private:
+  bool isCreated;
+  List<Instruction*>* instr;
+  int start, end;
+  List<string>* gen, *kill, *alive, *dead;
+  BasicBlock* nextBlock;
+  BasicBlock* gotoBlock; // null if no goto's
+
+public:
+  BasicBlock() : isCreated(false), start(-1), end(-1), nextBlock(NULL), gotoBlock(NULL)
+  {
+    instr = new List<Instruction*>();
+    gen = new List<string>();
+    kill = new List<string>();
+    alive = new List<string>();
+    dead = new List<string>();
+  }
+
+  void fillBlock(List<Instruction*>* code, int s, int e, BasicBlock* nextB,
+    BasicBlock* gotoB)
+  {
+    Assert(!isCreated);
+    start = s;
+    end = e;
+    nextBlock = nextB;
+    gotoBlock = gotoB;
+    for(int i = start; i < end; i++)
+      instr->Append(code->Nth(i));
+  }
+
+  List<string>* getGen() { return gen; }
+
+  List<string>* getAlive() { return alive; }
+
+  List<string>* getKill() { return kill; }
+
+  List<string>* getDead() { return dead; }
+
+  void anaylsis() {
+    //Insert Analysis here
+  }
+
 };
 
 
